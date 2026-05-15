@@ -312,3 +312,22 @@
   border-radius: 25px;
   outline: none;
 }
+
+/* 프로필 이미지 동그랗게 유지 */
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* 참여자 목록 스타일 */
+.participants-list {
+  background: #fcfdfe;
+  height: 100%;
+}
+
+/* 메시지 버블 정렬 보정 */
+.message-row.me {
+  justify-content: flex-end;
+}

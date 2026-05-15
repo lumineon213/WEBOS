@@ -25,5 +25,5 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "src/**/*.d.ts"
-  ]
+, "src/utils"  ]
 }

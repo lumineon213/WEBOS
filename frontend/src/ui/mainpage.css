@@ -2,11 +2,10 @@
 .os-background {
   width: 100vw;
   height: 100vh;
-  background: linear-gradient(135deg, #FFDEE9 0%, #B5FFFC 100%);
   position: relative;
   overflow: hidden;
   font-family: 'Nanum Gothic', sans-serif;
-  user-select: none; /* 텍스트 선택 방지 (I자 커서 예방) */
+  user-select: none;
 }
 
 /* 데코레이션 요소 */
@@ -85,42 +84,84 @@
   font-size: 16px;
   color: #333;
   cursor: pointer;
-  transition: background 0.2s;
 }
 
 .win-btn:hover { background: rgba(0, 0, 0, 0.05); }
 .win-btn.close:hover { background: #E81123; color: white; }
 
-/* ✅ 창 내용물 영역: 스크롤 가능하게 수정 */
 .window-content { 
   flex: 1; 
   background: white; 
-  overflow-y: auto; /* 세로 스크롤 허용 */
-  overflow-x: hidden; /* 가로 스크롤 방지 */
+  overflow-y: auto; 
+  overflow-x: hidden; 
   cursor: default; 
   user-select: text; 
 }
 
-/* ⭐ 모찌 OS 스타일 커스텀 스크롤바 추가 */
-.window-content::-webkit-scrollbar {
-  width: 10px;
+/* 커스텀 스크롤바 */
+.window-content::-webkit-scrollbar { width: 10px; }
+.window-content::-webkit-scrollbar-track { background: #FFF5F7; }
+.window-content::-webkit-scrollbar-thumb { background: #FFDEE9; border-radius: 10px; border: 2px solid #FFF5F7; }
+
+/* 스타트 메뉴 스타일 */
+.start-menu-container {
+  position: absolute;
+  bottom: 85px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 320px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 3px solid #FFDEE9;
+  border-radius: 30px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  z-index: 2000;
+  overflow: hidden;
+  animation: slideUp 0.3s ease-out;
 }
 
-.window-content::-webkit-scrollbar-track {
+@keyframes slideUp {
+  from { opacity: 0; transform: translate(-50%, 20px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.start-menu-header {
+  padding: 20px;
   background: #FFF5F7;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  border-bottom: 1px solid #FFDEE9;
 }
 
-.window-content::-webkit-scrollbar-thumb {
-  background: #FFDEE9;
-  border-radius: 10px;
-  border: 2px solid #FFF5F7; /* 스크롤바 주변에 여백 주기 */
-}
+.user-avatar { font-size: 30px; background: white; padding: 10px; border-radius: 50%; }
+.user-name { font-weight: bold; color: #555; margin: 0; }
+.user-status { font-size: 11px; color: #4ec0a6; margin: 0; }
+.power-btn { margin-left: auto; background: white; border: 1px solid #FFDEE9; border-radius: 10px; padding: 5px 10px; font-size: 11px; cursor: pointer; }
 
-.window-content::-webkit-scrollbar-thumb:hover {
-  background: #ff99cc;
-}
+.start-menu-body { padding: 20px; flex: 1; }
+.menu-section-title { font-size: 12px; color: #aaa; margin-bottom: 15px; font-weight: bold; }
 
-/* 위젯 및 기타 요소 */
+.pinned-apps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.pinned-app-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 10px;
+  border-radius: 15px;
+}
+.pinned-app-item:hover { background: #f0fbff; }
+.pinned-app-item .app-icon { font-size: 24px; }
+.pinned-app-item .app-name { font-size: 11px; color: #666; text-align: center; }
+
+.start-menu-footer { padding: 15px 20px; background: #F8F9FA; display: flex; justify-content: space-between; font-size: 13px; color: #888; }
+.footer-item:hover { color: #555; font-weight: bold; cursor: pointer; }
+
+/* 위젯 패널 */
 .widget-panel {
   position: absolute;
   right: 30px;
@@ -140,6 +181,7 @@
   text-align: center;
 }
 
+/* 작업표시줄 */
 .taskbar-container {
   position: absolute;
   bottom: 25px;
@@ -168,6 +210,8 @@
   font-weight: bold;
   cursor: pointer;
 }
+
+.start-btn.active { background: #FFDEE9; }
 
 .divider { width: 1px; height: 25px; background: #ddd; }
 .taskbar-app { font-size: 24px; cursor: pointer; transition: 0.2s; position: relative; }

@@ -11,12 +11,10 @@
   user-select: none;
 }
 
-/* 배경 장식 */
 .login-decor { position: absolute; font-size: 50px; opacity: 0.5; }
 .cloud { top: 15%; left: 10%; }
 .star { bottom: 15%; right: 10%; }
 
-/* 모찌 로그인 창 */
 .login-window-mochi {
   width: 350px;
   background: white;
@@ -87,3 +85,4 @@
 .btn-signup { background: #FFDEE9; color: #555; }
 
 .btn-login:hover, .btn-signup:hover { transform: translateY(-3px); }
+.btn-login:disabled { opacity: 0.6; cursor: not-allowed; }

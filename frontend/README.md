@@ -19,3 +19,7 @@ react-spring-app/
     ├── package.json
     ├── package-lock.json
     └── (기타 React 프로젝트 파일)
+
+    SUPABASE DB이용
+    DB PW : umi171500~!
+    
