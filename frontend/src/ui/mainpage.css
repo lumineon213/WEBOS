@@ -1,0 +1,177 @@
+/* 전체 배경 및 폰트 설정 */
+.os-background {
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #FFDEE9 0%, #B5FFFC 100%);
+  position: relative;
+  overflow: hidden;
+  font-family: 'Nanum Gothic', sans-serif;
+  user-select: none; /* 텍스트 선택 방지 (I자 커서 예방) */
+}
+
+/* 데코레이션 요소 */
+.bg-decor { position: absolute; font-size: 40px; opacity: 0.6; z-index: 1; pointer-events: none; }
+.cloud-1 { top: 10%; left: 15%; }
+.star-1 { top: 20%; right: 20%; }
+.flower-1 { bottom: 20%; left: 30%; }
+
+/* 바탕화면 아이콘 */
+.icon-wrapper {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 10;
+  cursor: pointer;
+}
+
+.icon-bubble {
+  width: 70px;
+  height: 70px;
+  background: white;
+  border-radius: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 35px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+}
+
+.icon-bubble:hover { transform: scale(1.1); }
+.icon-label { background: rgba(255,255,255,0.7); padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; }
+
+/* 윈도우 창 디자인 */
+.window-frame {
+  position: absolute;
+  background: white;
+  border-radius: 25px;
+  border: 3px solid #FFDEE9;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 100;
+}
+
+.window-frame.maximized { border-radius: 0; border: none; }
+
+.window-header {
+  height: 38px;
+  padding: 0 0 0 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #FFF5F7;
+  border-bottom: 1px solid #FFDEE9;
+  cursor: grab;
+}
+
+.window-header:active { cursor: grabbing; }
+.window-title { font-size: 13px; font-weight: bold; color: #555; }
+
+/* 윈도우 스타일 컨트롤 버튼 */
+.window-controls-win { display: flex; height: 100%; }
+
+.win-btn {
+  width: 45px;
+  height: 100%;
+  border: none;
+  background: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 16px;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.win-btn:hover { background: rgba(0, 0, 0, 0.05); }
+.win-btn.close:hover { background: #E81123; color: white; }
+
+/* ✅ 창 내용물 영역: 스크롤 가능하게 수정 */
+.window-content { 
+  flex: 1; 
+  background: white; 
+  overflow-y: auto; /* 세로 스크롤 허용 */
+  overflow-x: hidden; /* 가로 스크롤 방지 */
+  cursor: default; 
+  user-select: text; 
+}
+
+/* ⭐ 모찌 OS 스타일 커스텀 스크롤바 추가 */
+.window-content::-webkit-scrollbar {
+  width: 10px;
+}
+
+.window-content::-webkit-scrollbar-track {
+  background: #FFF5F7;
+}
+
+.window-content::-webkit-scrollbar-thumb {
+  background: #FFDEE9;
+  border-radius: 10px;
+  border: 2px solid #FFF5F7; /* 스크롤바 주변에 여백 주기 */
+}
+
+.window-content::-webkit-scrollbar-thumb:hover {
+  background: #ff99cc;
+}
+
+/* 위젯 및 기타 요소 */
+.widget-panel {
+  position: absolute;
+  right: 30px;
+  top: 50px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  z-index: 50;
+}
+
+.widget {
+  background: rgba(255,255,255,0.8);
+  padding: 20px;
+  border-radius: 20px;
+  border: 2px solid white;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  text-align: center;
+}
+
+.taskbar-container {
+  position: absolute;
+  bottom: 25px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.floating-taskbar {
+  background: rgba(255,255,255,0.9);
+  padding: 8px 20px;
+  border-radius: 25px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  backdrop-filter: blur(5px);
+}
+
+.start-btn {
+  border: none;
+  background: #B5FFFC;
+  padding: 8px 20px;
+  border-radius: 15px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.divider { width: 1px; height: 25px; background: #ddd; }
+.taskbar-app { font-size: 24px; cursor: pointer; transition: 0.2s; position: relative; }
+.taskbar-app:hover { transform: translateY(-5px); }
+.taskbar-app.minimized { opacity: 0.4; }
+.taskbar-app.active::after { content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: #666; border-radius: 50%; }
+.taskbar-time { font-size: 14px; font-weight: bold; color: #666; margin-left: 10px; }

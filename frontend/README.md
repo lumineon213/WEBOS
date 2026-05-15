@@ -1,0 +1,21 @@
+react-spring-app/
+│
+├── backend/
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/
+│   │   │   │   └── (Spring Backend 소스 코드)
+│   │   │   └── resources/
+│   │   │       └── (Spring 설정 파일 및 리소스)
+│   │   └── test/
+│   │       └── (테스트 관련 파일)
+│   └── pom.xml
+│
+└── frontend/
+    ├── public/
+    │   └── index.html
+    ├── src/
+    │   └── (React Frontend 소스 코드)
+    ├── package.json
+    ├── package-lock.json
+    └── (기타 React 프로젝트 파일)

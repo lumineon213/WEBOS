@@ -1,0 +1,89 @@
+.login-screen {
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #FFDEE9 0%, #B5FFFC 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Nanum Gothic', sans-serif;
+  user-select: none;
+}
+
+/* 배경 장식 */
+.login-decor { position: absolute; font-size: 50px; opacity: 0.5; }
+.cloud { top: 15%; left: 10%; }
+.star { bottom: 15%; right: 10%; }
+
+/* 모찌 로그인 창 */
+.login-window-mochi {
+  width: 350px;
+  background: white;
+  border-radius: 30px;
+  border: 4px solid #FFDEE9;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+  overflow: hidden;
+  z-index: 10;
+}
+
+.login-header-mochi {
+  height: 40px;
+  background: #FFF5F7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border-bottom: 2px solid #FFDEE9;
+}
+
+.login-traffic-lights { position: absolute; left: 15px; display: flex; gap: 6px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; }
+.red { background: #FF5F56; }
+.yellow { background: #FFBD2E; }
+.green { background: #27C93F; }
+
+.login-title { font-size: 13px; font-weight: bold; color: #888; }
+
+.login-form {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.login-avatar { font-size: 60px; margin-bottom: -10px; }
+.login-form h2 { color: #555; margin-bottom: 10px; font-size: 22px; }
+
+.input-field { width: 100%; }
+.input-field input {
+  width: 100%;
+  padding: 12px 20px;
+  border-radius: 15px;
+  border: 2px solid #F0F0F0;
+  background: #FAFAFA;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.3s;
+  cursor: text;
+}
+
+.input-field input:focus { border-color: #B5FFFC; }
+
+.login-action-btns { display: flex; gap: 10px; width: 100%; }
+
+.btn-login, .btn-signup {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.btn-login { background: #B5FFFC; color: #555; }
+.btn-signup { background: #FFDEE9; color: #555; }
+
+.btn-login:hover, .btn-signup:hover { transform: translateY(-3px); }
