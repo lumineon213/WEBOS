@@ -15,8 +15,7 @@
 .chat-app-wrapper {
   display: flex;
   width: 100%;
-  /* 상단 윈도우 타이틀바나 헤더가 있다면 그 높이만큼 빼주는 계산식, 없어도 안전하게 작동 */
-  height: calc(100vh - 40px); 
+  height: calc(100vh - 122px); /* 👈 40px을 70px ~ 80px 정도로 늘려보세요! */
   min-height: 400px;
   background-color: var(--bg-color);
   font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
