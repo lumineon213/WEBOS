@@ -1,47 +1,70 @@
 // @ts-nocheck
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './board.css';
 import BoardSetting from './boardsetting/boardsetting';
+import BoardDetail from './sub/board-detail';
+import BoardWrite from './sub/board-write';
+import { supabase } from '../../../utils/supabase';
 
 const Board: React.FC = () => {
-  // 현재 활성화된 메뉴 상태 (dashboard, posts, settings)
-  const [activeMenu, setActiveMenu] = useState('dashboard');
+  const [activeMenu, setActiveMenu] = useState('posts'); // 기본을 전체 게시판으로 변경
+  const [posts, setPosts] = useState([]);
+  const [selectedPostId, setSelectedPostId] = useState<number | null>(null);
+  const [isWriting, setIsWriting] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // 게시판 예시 데이터
-  const [posts] = useState([
-    { id: 1, title: '웹 OS 프로젝트 공지사항', author: '관리자', date: '2026-05-15', views: 124 },
-    { id: 2, title: '새로운 모찌 테마 적용 가이드', author: '채교준', date: '2026-05-14', views: 89 },
-    { id: 3, title: '자유게시판입니다.', author: '이현석', date: '2026-05-13', views: 45 },
-  ]);
+  const fetchPosts = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('posts')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (data) setPosts(data);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (activeMenu === 'posts') {
+      fetchPosts();
+    }
+  }, [activeMenu]);
+
+  const handlePostClick = (id: number) => {
+    setSelectedPostId(id);
+    setActiveMenu('detail');
+  };
+
+  const handleWriteSuccess = () => {
+    setIsWriting(false);
+    setActiveMenu('posts');
+    fetchPosts();
+  };
 
   return (
     <div className="board-dashboard">
-      {/* 1. 사이드보드: 메뉴 전환 기능 추가 */}
       <nav className="board-sidebar">
         <div 
           className={`sidebar-item ${activeMenu === 'dashboard' ? 'active' : ''}`}
-          onClick={() => setActiveMenu('dashboard')}
+          onClick={() => { setActiveMenu('dashboard'); setSelectedPostId(null); setIsWriting(false); }}
         >
           📊 관리 대시보드
         </div>
         <div 
-          className={`sidebar-item ${activeMenu === 'posts' ? 'active' : ''}`}
-          onClick={() => setActiveMenu('posts')}
+          className={`sidebar-item ${activeMenu === 'posts' || activeMenu === 'detail' ? 'active' : ''}`}
+          onClick={() => { setActiveMenu('posts'); setSelectedPostId(null); setIsWriting(false); }}
         >
           📝 전체 게시판
         </div>
         <div 
           className={`sidebar-item ${activeMenu === 'settings' ? 'active' : ''}`}
-          onClick={() => setActiveMenu('settings')}
+          onClick={() => { setActiveMenu('settings'); setSelectedPostId(null); setIsWriting(false); }}
         >
           ⚙️ 게시판 설정
         </div>
       </nav>
 
-      {/* 2. 메인 콘텐츠 영역 */}
       <main className="board-content">
-        
-        {/* [A] 관리 대시보드 뷰 (기존 UI 유지) */}
         {activeMenu === 'dashboard' && (
           <>
             <header className="content-header">
@@ -55,7 +78,7 @@ const Board: React.FC = () => {
               </div>
               <div className="stat-card">
                 <span className="stat-label">새 게시글</span>
-                <div className="stat-value">12 <span className="up">▲ 2건</span></div>
+                <div className="stat-value">{posts.length} <span className="up">▲</span></div>
               </div>
               <div className="stat-card">
                 <span className="stat-label">서버 부하</span>
@@ -71,43 +94,60 @@ const Board: React.FC = () => {
           </>
         )}
 
-        {/* [B] 일반 게시판 뷰 (새로운 리스트 UI) */}
         {activeMenu === 'posts' && (
           <div className="posts-view">
             <header className="content-header">
               <h2>전체 게시판</h2>
-              <button className="report-btn">글쓰기</button>
+              <button className="report-btn" onClick={() => setIsWriting(true)}>글쓰기</button>
             </header>
-            <div className="posts-list-card">
-              <table className="dashboard-table">
-                <thead>
-                  <tr>
-                    <th>번호</th>
-                    <th>제목</th>
-                    <th>작성자</th>
-                    <th>날짜</th>
-                    <th>조회수</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {posts.map(post => (
-                    <tr key={post.id} className="post-row-item">
-                      <td>{post.id}</td>
-                      <td className="post-link">{post.title}</td>
-                      <td>{post.author}</td>
-                      <td>{post.date}</td>
-                      <td>{post.views}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {isWriting ? (
+              <BoardWrite onBack={() => setIsWriting(false)} onSuccess={handleWriteSuccess} />
+            ) : (
+              <div className="posts-list-card">
+                {loading ? (
+                  <div className="loading">불러오는 중...</div>
+                ) : (
+                  <table className="dashboard-table">
+                    <thead>
+                      <tr>
+                        <th>번호</th>
+                        <th>제목</th>
+                        <th>작성자</th>
+                        <th>날짜</th>
+                        <th>조회수</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {posts.map((post, index) => (
+                        <tr key={post.id} className="post-row-item" onClick={() => handlePostClick(post.id)}>
+                          <td>{posts.length - index}</td>
+                          <td className="post-link">{post.title}</td>
+                          <td>{post.author}</td>
+                          <td>{new Date(post.created_at).toLocaleDateString()}</td>
+                          <td>{post.views}</td>
+                        </tr>
+                      ))}
+                      {posts.length === 0 && (
+                        <tr>
+                          <td colSpan="5" style={{textAlign: 'center', padding: '20px'}}>게시글이 없습니다.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            )}
           </div>
         )}
 
-        {/* [C] 게시판 설정 뷰 (BoardSetting 연결) */}
-        {activeMenu === 'settings' && <BoardSetting />}
+        {activeMenu === 'detail' && selectedPostId && (
+          <BoardDetail 
+            postId={selectedPostId} 
+            onBack={() => setActiveMenu('posts')} 
+          />
+        )}
 
+        {activeMenu === 'settings' && <BoardSetting />}
       </main>
     </div>
   );
