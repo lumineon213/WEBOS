@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../../utils/supabase';
 import { uploadPostImages, validateImageFiles, createPost } from '../board-utils';
 
@@ -26,7 +26,7 @@ const BoardCompose: React.FC<BoardComposeProps> = ({
   const fileRef = useRef(null);
   const maxLen = 280;
 
-  React.useEffect(() => {
+  useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) return;
       const { data } = await supabase.from('profiles').select('avatar_url').eq('id', user.id).single();
@@ -73,12 +73,20 @@ const BoardCompose: React.FC<BoardComposeProps> = ({
       return;
     }
 
+    // 🚀 [신규 추가] 본문 텍스트에서 해시태그를 정규식으로 자동 추출합니다.
+    // 예: "안녕하세요 #React #WEBOS 공부 중입니다" -> ['#React', '#WEBOS'] 추출됨
+    const hashtagRegex = /#([ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z0-9_]+)/g;
+    const matches = text.match(hashtagRegex) || [];
+    const extractedTags = matches.map(tag => tag.trim());
+
+    // 🚀 추출된 태그 배열(extractedTags)을 createPost 매개변수에 포함하여 전송합니다.
     const { error: postErr } = await createPost({
       userId: user.id,
       author: profile?.nickname || user.email?.split('@')[0] || '익명',
       content: text,
       parentId,
       imageUrls,
+      tags: extractedTags, // 👈 기존 함수 아규먼트에 추가 바인딩!
     });
 
     setSubmitting(false);

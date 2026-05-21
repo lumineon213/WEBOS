@@ -21,6 +21,10 @@ const Board: React.FC = () => {
   // 🚀 에펨코리아 / X 스타일 보기 모드 상태값 선언
   const [viewMode, setViewMode] = useState<'x' | 'fmkorea'>('x');
 
+  // 🚀 PC게시판 전용 페이징 상태값 (한 페이지에 20개씩 끊기)
+  const [currentPage, setCurrentPage] = useState(1);
+  const postsPerPage = 20;
+
   const loadFeed = useCallback(async () => {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
@@ -28,14 +32,18 @@ const Board: React.FC = () => {
     setUserId(uid);
     const { posts: list, error } = await fetchTimelinePosts(uid);
     if (error) console.warn(error);
-    setPosts(list);
+    setPosts(list || []);
     setLoading(false);
   }, []);
 
   useEffect(() => {
-    if (tab === 'home' || tab === 'explore') loadFeed();
+    if (tab === 'home' || tab === 'explore') {
+      loadFeed();
+      setCurrentPage(1); // 탭이 변경되면 PC게시판 페이지도 1페이지로 리셋
+    }
   }, [tab, loadFeed]);
 
+  // 검색 필터링된 전체 데이터
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return posts;
@@ -47,6 +55,16 @@ const Board: React.FC = () => {
     );
   }, [posts, search]);
 
+  // 🚀 PC게시판(fmkorea) 스타일에서만 사용할 페이지별 20개 슬라이싱 데이터
+  const indexOfLastPost = currentPage * postsPerPage;
+  const indexOfFirstPost = indexOfLastPost - postsPerPage;
+  const currentPosts = useMemo(() => {
+    return filtered.slice(indexOfFirstPost, indexOfLastPost);
+  }, [filtered, indexOfFirstPost, indexOfLastPost]);
+
+  // PC게시판 기준 총 페이지 수
+  const totalPages = Math.ceil(filtered.length / postsPerPage);
+
   const handleLike = async (postId: number, liked: boolean) => {
     if (!userId) return;
     const res = await togglePostLike(userId, postId, liked);
@@ -54,14 +72,23 @@ const Board: React.FC = () => {
     loadFeed();
   };
 
-  const openThread = (id: number) => {
-    setThreadId(id);
-    setTab('thread');
+  // 상세 보기 열기 (중복 조회 방지를 위해 화면 전환용 역할만 수행)
+  const openThread = async (id: number) => {
+    try {
+      setThreadId(id);
+      setTab('thread');
+      loadFeed();
+    } catch (err) {
+      console.error('상세 보기 전환 실패:', err);
+      setThreadId(id);
+      setTab('thread');
+    }
   };
 
   const backFromThread = () => {
     setThreadId(null);
     setTab('home');
+    loadFeed();
   };
 
   return (
@@ -135,7 +162,6 @@ const Board: React.FC = () => {
               </div>
             )}
 
-            {/* 🚀 상단 타이틀 밑에 뷰 모드 전환 탭/버튼 배치 */}
             <div className="board-view-toggle">
               <button 
                 type="button"
@@ -153,7 +179,6 @@ const Board: React.FC = () => {
               </button>
             </div>
 
-            {/* 🚀 피드 영역 내부를 보기 설정 상태값(viewMode)에 따라 조건부 분기 렌더링 */}
             <div className="x-feed">
               {loading ? (
                 <div className="x-feed-status">타임라인 불러오는 중…</div>
@@ -163,7 +188,7 @@ const Board: React.FC = () => {
                   <p className="x-feed-hint">첫 번째 포스트를 작성해보세요!</p>
                 </div>
               ) : viewMode === 'x' ? (
-                // [선택 1] 기존의 X 스타일 피드
+                // 🔒 [건들지 않음] 기존 트위터 스타일 피드는 무조건 원본 filtered 전체를 map 순회
                 filtered.map((post) => (
                   <BoardPost
                     key={post.id}
@@ -174,7 +199,7 @@ const Board: React.FC = () => {
                   />
                 ))
               ) : (
-                // [선택 2] 에펨코리아 스타일 정갈한 표 리스트 (신규 추가)
+                // 📋 [여기만 수정] PC게시판 스타일은 20개 슬라이싱된 currentPosts만 순회 렌더링
                 <div className="fm-board-container">
                   <table className="fm-table">
                     <thead>
@@ -188,10 +213,11 @@ const Board: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {filtered.map((post) => {
+                      {currentPosts.map((post) => {
                         const prof = post.profile || {};
-                        const replyCount = post.reply_count || post.replies?.length || 0;
-                        const likeCount = post.like_count || post.likes?.length || 0;
+                        const replyCount = post.reply_count || post.replyCount || post.replies?.length || 0;
+                        const likeCount = post.like_count || post.likeCount || post.likes?.length || 0;
+                        const viewCount = post.views || post.view_count || 0;
                         
                         return (
                           <tr key={post.id} className="fm-tr" onClick={() => openThread(post.id)}>
@@ -203,19 +229,53 @@ const Board: React.FC = () => {
                               {replyCount > 0 && (
                                 <span className="fm-reply-count">[{replyCount}]</span>
                               )}
-                              {post.image_url && <span className="fm-img-icon">🖼️</span>}
+                              {(post.image_url || post.images) && <span className="fm-img-icon">🖼️</span>}
                             </td>
                             <td className="fm-td-author">{prof.nickname || post.author || '익명'}</td>
                             <td className="fm-td-date">
                               {new Date(post.created_at).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' })}
                             </td>
-                            <td className="fm-td-views">{post.views || 0}</td>
+                            <td className="fm-td-views">{viewCount}</td>
                             <td className="fm-td-likes-count">{likeCount}</td>
                           </tr>
                         );
                       })}
                     </tbody>
                   </table>
+
+                  {/* 🚀 PC게시판 전용 독립 하단 페이징 바 작동 영역 */}
+                  {totalPages > 1 && (
+                    <div className="fm-pagination">
+                      <button 
+                        type="button" 
+                        className="fm-page-btn"
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      >
+                        이전
+                      </button>
+                      
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                        <button
+                          key={pageNum}
+                          type="button"
+                          className={`fm-page-num ${currentPage === pageNum ? 'active' : ''}`}
+                          onClick={() => setCurrentPage(pageNum)}
+                        >
+                          {pageNum}
+                        </button>
+                      ))}
+
+                      <button 
+                        type="button" 
+                        className="fm-page-btn"
+                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      >
+                        다음
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
