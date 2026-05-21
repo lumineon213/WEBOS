@@ -126,7 +126,7 @@
    메인 피드 레이아웃 하위에 PC게시판(.fm-board-container)이 활성화되어 렌더링될 경우,
    부모 요소인 .x-main의 가로 폭 제한을 950px로 대폭 자동 확장시켜 버립니다! */
 .x-main:has(.fm-board-container) {
-  max-width: 950px; 
+  max-width: 9500px; 
 }
 
 .x-main-header {
