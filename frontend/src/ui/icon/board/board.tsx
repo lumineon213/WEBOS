@@ -17,6 +17,9 @@ const Board: React.FC = () => {
   const [userId, setUserId] = useState('');
   const [threadId, setThreadId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
+  
+  // 🚀 에펨코리아 / X 스타일 보기 모드 상태값 선언
+  const [viewMode, setViewMode] = useState<'x' | 'fmkorea'>('x');
 
   const loadFeed = useCallback(async () => {
     setLoading(true);
@@ -132,6 +135,25 @@ const Board: React.FC = () => {
               </div>
             )}
 
+            {/* 🚀 상단 타이틀 밑에 뷰 모드 전환 탭/버튼 배치 */}
+            <div className="board-view-toggle">
+              <button 
+                type="button"
+                className={viewMode === 'x' ? 'active' : ''} 
+                onClick={() => setViewMode('x')}
+              >
+                📱 트위터 스타일
+              </button>
+              <button 
+                type="button"
+                className={viewMode === 'fmkorea' ? 'active' : ''} 
+                onClick={() => setViewMode('fmkorea')}
+              >
+                📋 PC게시판 스타일
+              </button>
+            </div>
+
+            {/* 🚀 피드 영역 내부를 보기 설정 상태값(viewMode)에 따라 조건부 분기 렌더링 */}
             <div className="x-feed">
               {loading ? (
                 <div className="x-feed-status">타임라인 불러오는 중…</div>
@@ -140,7 +162,8 @@ const Board: React.FC = () => {
                   <p>{search ? '검색 결과가 없습니다.' : '아직 게시물이 없습니다.'}</p>
                   <p className="x-feed-hint">첫 번째 포스트를 작성해보세요!</p>
                 </div>
-              ) : (
+              ) : viewMode === 'x' ? (
+                // [선택 1] 기존의 X 스타일 피드
                 filtered.map((post) => (
                   <BoardPost
                     key={post.id}
@@ -150,6 +173,50 @@ const Board: React.FC = () => {
                     onReply={openThread}
                   />
                 ))
+              ) : (
+                // [선택 2] 에펨코리아 스타일 정갈한 표 리스트 (신규 추가)
+                <div className="fm-board-container">
+                  <table className="fm-table">
+                    <thead>
+                      <tr>
+                        <th className="fm-th-id">번호</th>
+                        <th className="fm-th-title">제목</th>
+                        <th className="fm-th-author">글쓴이</th>
+                        <th className="fm-th-date">날짜</th>
+                        <th className="fm-th-views">조회</th>
+                        <th className="fm-th-likes">추천</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((post) => {
+                        const prof = post.profile || {};
+                        const replyCount = post.reply_count || post.replies?.length || 0;
+                        const likeCount = post.like_count || post.likes?.length || 0;
+                        
+                        return (
+                          <tr key={post.id} className="fm-tr" onClick={() => openThread(post.id)}>
+                            <td className="fm-td-id">{post.id}</td>
+                            <td className="fm-td-title">
+                              <span className="fm-title-text">
+                                {post.title || post.content?.slice(0, 30) || '제목 없음'}
+                              </span>
+                              {replyCount > 0 && (
+                                <span className="fm-reply-count">[{replyCount}]</span>
+                              )}
+                              {post.image_url && <span className="fm-img-icon">🖼️</span>}
+                            </td>
+                            <td className="fm-td-author">{prof.nickname || post.author || '익명'}</td>
+                            <td className="fm-td-date">
+                              {new Date(post.created_at).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' })}
+                            </td>
+                            <td className="fm-td-views">{post.views || 0}</td>
+                            <td className="fm-td-likes-count">{likeCount}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           </>
