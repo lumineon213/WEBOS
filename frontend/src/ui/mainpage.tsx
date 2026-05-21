@@ -66,8 +66,11 @@ const MainPage: React.FC = () => {
       setWindows(windows.map(w => w.id === id ? { ...w, isMinimized: false } : w));
       return;
     }
+    const isChat = id === 'chat';
     setWindows([...windows, { 
-      id, x: 250, y: 100, width: 600, height: 450, 
+      id, x: 120, y: 60,
+      width: isChat ? 960 : 600,
+      height: isChat ? 620 : 450,
       isMaximized: false, isMinimized: false 
     }]);
   };
