@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../utils/supabase';
+import { syncUserSession } from '../../utils/auth';
 import './login.css';
 
 const Login: React.FC = () => {
@@ -28,7 +29,7 @@ const Login: React.FC = () => {
     if (error) {
       alert('아이디 또는 비밀번호가 틀렸습니다!');
     } else if (data.user) {
-      localStorage.setItem('isLoggedIn', 'true');
+      await syncUserSession(data.user);
       navigate('/main');
     }
   };

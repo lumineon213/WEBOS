@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../utils/supabase';
+import { ROLE_MEMBER } from '../../utils/auth';
+import { resolveUniqueCodeForUser } from '../../utils/uniqueCode';
 import './register.css';
 
 const Register: React.FC = () => {
@@ -40,6 +42,16 @@ const Register: React.FC = () => {
     if (error) {
       alert('회원가입 실패: ' + error.message);
     } else {
+      if (data.user) {
+        const unique_code = await resolveUniqueCodeForUser(userId, null, data.user.id);
+        await supabase.from('profiles').upsert({
+          id: data.user.id,
+          nickname: userId,
+          role: ROLE_MEMBER,
+          unique_code,
+          updated_at: new Date().toISOString(),
+        });
+      }
       alert(`${userId}님, 회원가입 성공! 이제 로그인해 주세요. 🍡`);
       navigate('/'); 
     }

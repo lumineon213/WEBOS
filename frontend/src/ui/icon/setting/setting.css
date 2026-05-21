@@ -19,6 +19,25 @@
   gap: 15px;
 }
 
+.p-code-label {
+  font-size: 11px;
+  color: #aaa;
+  margin: 8px 0 2px;
+}
+
+.p-code-hint {
+  font-size: 11px;
+  color: #bbb;
+  margin: 4px 0 0;
+  line-height: 1.4;
+}
+
+.p-role-hint {
+  font-size: 11px;
+  color: #bbb;
+  margin: 4px 0 0;
+}
+
 .section-title {
   font-size: 14px;
   color: #a0a0a0;

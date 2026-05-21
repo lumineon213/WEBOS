@@ -139,6 +139,16 @@
 .user-avatar { font-size: 30px; background: white; padding: 10px; border-radius: 50%; }
 .user-name { font-weight: bold; color: #555; margin: 0; }
 .user-status { font-size: 11px; color: #4ec0a6; margin: 0; }
+.role-badge-admin {
+  margin-left: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ff66aa, #ff3366);
+  color: #fff;
+  vertical-align: middle;
+}
 .power-btn { margin-left: auto; background: white; border: 1px solid #FFDEE9; border-radius: 10px; padding: 5px 10px; font-size: 11px; cursor: pointer; }
 
 .start-menu-body { padding: 20px; flex: 1; }

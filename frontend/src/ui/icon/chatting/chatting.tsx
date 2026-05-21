@@ -2,6 +2,9 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import './chatting.css';
 import { supabase } from '../../../utils/supabase';
+import { useAuth } from '../../../hooks/useAuth';
+import { ensureProfileUniqueCode, extractUniqueCodeDigits, formatUniqueCode } from '../../../utils/uniqueCode';
+import { fetchFriends, addFriendByCode } from '../../../utils/friends';
 
 const GROUP_GAP_MS = 5 * 60 * 1000;
 
@@ -21,8 +24,14 @@ const formatDateLabel = (iso: string) => {
 const getInitial = (name: string) => (name?.[0] || '?').toUpperCase();
 
 const Chatting: React.FC = () => {
-  const [profile, setProfile] = useState({ nickname: '', avatar_url: '', userId: '' });
+  const { isAdmin, uniqueCode: myCode } = useAuth();
+  const [profile, setProfile] = useState({ nickname: '', avatar_url: '', userId: '', unique_code: '' });
   const [rooms, setRooms] = useState([]);
+  const [friends, setFriends] = useState([]);
+  const [sidebarTab, setSidebarTab] = useState('channels');
+  const [friendCodeInput, setFriendCodeInput] = useState('');
+  const [friendMsg, setFriendMsg] = useState('');
+  const [addingFriend, setAddingFriend] = useState(false);
   const [activeRoom, setActiveRoom] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -39,15 +48,23 @@ const Chatting: React.FC = () => {
       if (!user) return;
       const idOnly = user.email?.split('@')[0] || 'user';
       const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      const code = await ensureProfileUniqueCode(user.id, idOnly, prof?.unique_code);
       setProfile({
         nickname: prof?.nickname || idOnly,
         avatar_url: prof?.avatar_url || '',
         userId: user.id,
+        unique_code: code,
       });
       fetchRooms();
+      loadFriends(user.id);
     };
     initChat();
   }, []);
+
+  const loadFriends = async (userId: string) => {
+    const { friends: list } = await fetchFriends(userId);
+    setFriends(list || []);
+  };
 
   useEffect(() => {
     if (!activeRoom) return;
@@ -94,8 +111,39 @@ const Chatting: React.FC = () => {
 
   const fetchRooms = async () => {
     const { data } = await supabase.from('chat_rooms').select('*').order('created_at', { ascending: false });
-    setRooms(data || []);
-    if (data?.length && !activeRoom) setActiveRoom(data[0]);
+    const channels = (data || []).filter((r) => r.type !== 'dm' && !r.dm_key);
+    setRooms(channels);
+  };
+
+  const openFriendDm = async (friendRow: { dm_room_id?: string; profile: { nickname: string } }) => {
+    if (!friendRow.dm_room_id) return;
+    const { data: room } = await supabase.from('chat_rooms').select('*').eq('id', friendRow.dm_room_id).single();
+    if (room) {
+      setSidebarTab('friends');
+      setActiveRoom(room);
+    }
+  };
+
+  const handleAddFriend = async () => {
+    if (!profile.userId) return;
+    const code = formatUniqueCode(friendCodeInput);
+    if (!code) {
+      setFriendMsg('# 포함 16자리 숫자 고유코드를 입력해주세요.');
+      return;
+    }
+    setAddingFriend(true);
+    setFriendMsg('');
+    const result = await addFriendByCode(profile.userId, code);
+    setAddingFriend(false);
+    if (!result.ok) {
+      setFriendMsg(result.error);
+      return;
+    }
+    setFriendCodeInput('');
+    setFriendMsg(`${result.friend.nickname}님을 친구로 추가했습니다!`);
+    await loadFriends(profile.userId);
+    if (result.room) setActiveRoom(result.room);
+    setSidebarTab('friends');
   };
 
   const fetchMessages = async (roomId: string) => {
@@ -202,6 +250,10 @@ const Chatting: React.FC = () => {
   };
 
   const createRoom = async () => {
+    if (!isAdmin) {
+      alert('채널 생성은 관리자만 할 수 있습니다.');
+      return;
+    }
     const name = prompt('새 텍스트 채널 이름:');
     if (!name?.trim()) return;
     const { data, error } = await supabase
@@ -248,8 +300,21 @@ const Chatting: React.FC = () => {
     <div className="dc-app">
       {/* 서버 레일 */}
       <nav className="dc-server-rail" aria-label="서버 목록">
-        <button type="button" className="dc-server-icon dc-home" title="홈">
-          <span>🏠</span>
+        <button
+          type="button"
+          className={`dc-server-icon dc-home ${sidebarTab === 'friends' ? 'active' : ''}`}
+          title="친구 / DM"
+          onClick={() => setSidebarTab('friends')}
+        >
+          <span>👥</span>
+        </button>
+        <button
+          type="button"
+          className={`dc-server-icon ${sidebarTab === 'channels' ? 'active' : ''}`}
+          title="채널"
+          onClick={() => setSidebarTab('channels')}
+        >
+          <span>#</span>
         </button>
         <div className="dc-rail-divider" />
         {rooms.map((room) => (
@@ -263,45 +328,100 @@ const Chatting: React.FC = () => {
             <span>{getInitial(room.name)}</span>
           </button>
         ))}
-        <button type="button" className="dc-server-icon dc-add-server" title="서버 추가" onClick={createRoom}>
-          <span>+</span>
-        </button>
+        {isAdmin && (
+          <button type="button" className="dc-server-icon dc-add-server" title="서버 추가" onClick={createRoom}>
+            <span>+</span>
+          </button>
+        )}
       </nav>
 
       {/* 채널 사이드바 */}
       <aside className="dc-channel-sidebar">
         <header className="dc-guild-header">
           <h2>WEBOS Chat</h2>
-          <button type="button" className="dc-icon-btn" title="채널 만들기" onClick={createRoom}>+</button>
+          {isAdmin && (
+            <button type="button" className="dc-icon-btn" title="채널 만들기" onClick={createRoom}>+</button>
+          )}
         </header>
 
-        <div className="dc-channel-section">
-          <div className="dc-section-label">
-            <span>텍스트 채널</span>
+        {sidebarTab === 'channels' ? (
+          <div className="dc-channel-section">
+            <div className="dc-section-label">
+              <span>텍스트 채널</span>
+            </div>
+            <ul className="dc-channel-list">
+              {rooms.map((room) => (
+                <li key={room.id}>
+                  <button
+                    type="button"
+                    className={`dc-channel-item ${activeRoom?.id === room.id ? 'active' : ''}`}
+                    onClick={() => setActiveRoom(room)}
+                  >
+                    <span className="dc-hash">#</span>
+                    <span className="dc-channel-name">{room.name}</span>
+                  </button>
+                </li>
+              ))}
+              {rooms.length === 0 && (
+                <li className="dc-empty-hint">{isAdmin ? '채널이 없습니다. + 로 만드세요.' : '채널이 없습니다.'}</li>
+              )}
+            </ul>
           </div>
-          <ul className="dc-channel-list">
-            {rooms.map((room) => (
-              <li key={room.id}>
-                <button
-                  type="button"
-                  className={`dc-channel-item ${activeRoom?.id === room.id ? 'active' : ''}`}
-                  onClick={() => setActiveRoom(room)}
-                >
-                  <span className="dc-hash">#</span>
-                  <span className="dc-channel-name">{room.name}</span>
-                </button>
-              </li>
-            ))}
-            {rooms.length === 0 && (
-              <li className="dc-empty-hint">채널이 없습니다. + 로 만드세요.</li>
-            )}
-          </ul>
-        </div>
+        ) : (
+          <div className="dc-channel-section dc-friends-section">
+            <div className="dc-section-label">
+              <span>친구 추가</span>
+            </div>
+            <div className="dc-friend-add">
+              <span className="dc-code-prefix">#</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={16}
+                placeholder="16자리 숫자"
+                value={friendCodeInput}
+                onChange={(e) => setFriendCodeInput(extractUniqueCodeDigits(e.target.value).slice(0, 16))}
+              />
+              <button type="button" onClick={handleAddFriend} disabled={addingFriend}>
+                {addingFriend ? '…' : '추가'}
+              </button>
+            </div>
+            {friendMsg && <p className={`dc-friend-msg ${friendMsg.includes('추가했') ? 'ok' : 'err'}`}>{friendMsg}</p>}
+
+            <div className="dc-section-label">
+              <span>친구 목록</span>
+            </div>
+            <ul className="dc-channel-list">
+              {friends.map((f) => (
+                <li key={f.id}>
+                  <button
+                    type="button"
+                    className={`dc-channel-item dm ${activeRoom?.id === f.dm_room_id ? 'active' : ''}`}
+                    onClick={() => openFriendDm(f)}
+                  >
+                    <span className="dc-hash">💬</span>
+                    <span className="dc-channel-name">{f.profile?.nickname}</span>
+                    <span className="dc-friend-code">{formatUniqueCode(f.profile?.unique_code)}</span>
+                  </button>
+                </li>
+              ))}
+              {friends.length === 0 && (
+                <li className="dc-empty-hint">고유코드로 친구를 추가하세요.</li>
+              )}
+            </ul>
+          </div>
+        )}
 
         <footer className="dc-user-panel">
           {renderAvatar({ nickname: profile.nickname, avatar_url: profile.avatar_url }, 'sm')}
           <div className="dc-user-meta">
             <span className="dc-user-name">{profile.nickname || '게스트'}</span>
+            <span className="dc-user-code" title="내 고유코드 (클릭 복사)" onClick={() => {
+              const c = formatUniqueCode(profile.unique_code || myCode);
+              if (c) { navigator.clipboard.writeText(c); alert('고유코드 복사됨: ' + c); }
+            }}>
+              {formatUniqueCode(profile.unique_code || myCode) || '#················'}
+            </span>
             <span className="dc-user-status">온라인</span>
           </div>
           <div className="dc-user-actions">
@@ -317,7 +437,7 @@ const Chatting: React.FC = () => {
           <>
             <header className="dc-chat-header">
               <div className="dc-channel-title">
-                <span className="dc-hash">#</span>
+                <span className="dc-hash">{activeRoom.type === 'dm' || activeRoom.dm_key ? '💬' : '#'}</span>
                 <h3>{activeRoom.name}</h3>
               </div>
               <div className="dc-header-tools">

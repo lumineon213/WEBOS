@@ -7,6 +7,10 @@ import Board from './icon/board/board';
 import Setting from './icon/setting/setting';
 import Weather from './icon/weather/weather';
 import Memo from './icon/memo/memo';
+import AdminPanel from './icon/admin/admin';
+import { useAuth } from '../hooks/useAuth';
+import { clearUserSession } from '../utils/auth';
+import { supabase } from '../utils/supabase';
 
 interface DesktopIcon {
   id: string;
@@ -35,8 +39,18 @@ interface BackgroundState {
   value: string;
 }
 
+const BASE_DESKTOP_ICONS: DesktopIcon[] = [
+  { id: 'board', name: '📑 게시판', icon: '📑', x: 50, y: 50 },
+  { id: 'chat', name: '💬 채팅', icon: '💬', x: 50, y: 150 },
+  { id: 'memo', name: '📒 메모장', icon: '📒', x: 50, y: 250 },
+  { id: 'settings', name: '⚙️ 설정', icon: '⚙️', x: 50, y: 350 },
+];
+
+const ADMIN_DESKTOP_ICON: DesktopIcon = { id: 'admin', name: '🛡️ 관리자', icon: '🛡️', x: 50, y: 450 };
+
 const MainPage: React.FC = () => {
   const navigate = useNavigate();
+  const { isAdmin, nickname, loginId, role } = useAuth();
   const [background, setBackground] = useState<BackgroundState>(() => {
     const savedBg = localStorage.getItem('mochi_bg');
     return savedBg ? JSON.parse(savedBg) : { type: 'color', value: 'linear-gradient(135deg, #FFDEE9 0%, #B5FFFC 100%)' };
@@ -44,12 +58,16 @@ const MainPage: React.FC = () => {
 
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
 
-  const [icons, setIcons] = useState<DesktopIcon[]>([
-    { id: 'board', name: '📑 게시판', icon: '📑', x: 50, y: 50 },
-    { id: 'chat', name: '💬 채팅', icon: '💬', x: 50, y: 150 },
-    { id: 'memo', name: '📒 메모장', icon: '📒', x: 50, y: 250 },
-    { id: 'settings', name: '⚙️ 설정', icon: '⚙️', x: 50, y: 350 },
-  ]);
+  const [icons, setIcons] = useState<DesktopIcon[]>(BASE_DESKTOP_ICONS);
+
+  useEffect(() => {
+    setIcons((prev) => {
+      const hasAdmin = prev.some((i) => i.id === 'admin');
+      if (isAdmin && !hasAdmin) return [...prev, ADMIN_DESKTOP_ICON];
+      if (!isAdmin && hasAdmin) return prev.filter((i) => i.id !== 'admin');
+      return prev;
+    });
+  }, [isAdmin]);
 
   const [windows, setWindows] = useState<WindowState[]>([]);
   const [dragging, setDragging] = useState<{ id: string; type: 'icon' | 'window' } | null>(null);
@@ -60,17 +78,23 @@ const MainPage: React.FC = () => {
   }, [background]);
 
   const handleOpenApp = (id: string) => {
-    setIsStartMenuOpen(false); // ✅ 앱 실행 시 스타트 메뉴 닫기
+    if (id === 'admin' && !isAdmin) {
+      alert('관리자만 사용할 수 있는 기능입니다.');
+      return;
+    }
+    setIsStartMenuOpen(false);
     const existing = windows.find(win => win.id === id);
     if (existing) {
       setWindows(windows.map(w => w.id === id ? { ...w, isMinimized: false } : w));
       return;
     }
     const isChat = id === 'chat';
+    const isBoard = id === 'board';
+    const isAdminWin = id === 'admin';
     setWindows([...windows, { 
       id, x: 120, y: 60,
-      width: isChat ? 960 : 600,
-      height: isChat ? 620 : 450,
+      width: isChat ? 960 : isBoard ? 1000 : isAdminWin ? 720 : 600,
+      height: isChat ? 620 : isBoard ? 640 : isAdminWin ? 520 : 450,
       isMaximized: false, isMinimized: false 
     }]);
   };
@@ -119,10 +143,9 @@ const MainPage: React.FC = () => {
   };
 
   // ✅ 3. 로그아웃 처리 함수
-  const handleLogout = () => {
-    // 로컬 스토리지의 로그인 정보를 삭제합니다.
-    localStorage.removeItem('isLoggedIn');
-    // 시작 페이지(로그인 화면)로 이동합니다.
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    clearUserSession();
     navigate('/');
   };
 
@@ -168,8 +191,11 @@ return (
           <div className="start-menu-header">
             <div className="user-avatar">🍡</div>
             <div className="user-info">
-              <p className="user-name">채교준</p>
-              <p className="user-status">온라인</p>
+              <p className="user-name">
+                {nickname || loginId || '사용자'}
+                {isAdmin && <span className="role-badge-admin">관리자</span>}
+              </p>
+              <p className="user-status">{role} · 온라인</p>
             </div>
             <button 
               className="power-btn" 
@@ -228,6 +254,7 @@ return (
               {win.id === 'board' && <Board />}
               {win.id === 'settings' && <Setting currentBackground={background} onBackgroundChange={setBackground} />}
               {win.id === 'memo' && <Memo />}
+              {win.id === 'admin' && isAdmin && <AdminPanel />}
             </div>
           </div>
         )
