@@ -123,7 +123,7 @@ const Weather: React.FC = () => {
       {/* 현재 날씨 메인 영역 */}
       <div className="weather-main">
         <div className="weather-location">
-          <span className="location-icon">📍</span> {weather.city}
+          <span className="location-icon">📍</span> {weather.city} 
         </div>
         <div className="main-display">
           <span className="weather-big-icon">{weather.mainIcon}</span>

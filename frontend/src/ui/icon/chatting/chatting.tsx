@@ -28,6 +28,10 @@ const Chatting: React.FC = () => {
   const [profile, setProfile] = useState({ nickname: '', avatar_url: '', userId: '', unique_code: '' });
   const [rooms, setRooms] = useState([]);
   const [friends, setFriends] = useState([]);
+  
+  // 🚀 받은 친구 요청 목록 (DB 쿼리 에러 유발 요소를 제거한 안전한 구조)
+  const [pendingRequests, setPendingRequests] = useState([]);
+  
   const [sidebarTab, setSidebarTab] = useState('channels');
   const [friendCodeInput, setFriendCodeInput] = useState('');
   const [friendMsg, setFriendMsg] = useState('');
@@ -56,15 +60,59 @@ const Chatting: React.FC = () => {
         unique_code: code,
       });
       fetchRooms();
-      loadFriends(user.id);
+      loadFriendsData(user.id);
     };
     initChat();
   }, []);
 
-  const loadFriends = async (userId: string) => {
+  // 🚀 기존에 안정성이 검증된 fetchFriends 함수 구조를 그대로 활용하는 안전한 로더
+  const loadFriendsData = async (userId: string) => {
+    if (!userId) return;
+    
+    // 1. 기존 유틸 함수로 친구 관계를 안정적으로 뽑아옵니다.
     const { friends: list } = await fetchFriends(userId);
-    setFriends(list || []);
+    
+    // status 컬럼이 생겼으므로, 수락 완료('accepted')되거나 status가 없는(기존 데이터) 항목만 친구 목록에 매핑합니다.
+    const acceptedFriends = (list || []).filter(f => !f.status || f.status === 'accepted');
+    setFriends(acceptedFriends);
+
+    // 2. 나에게 온 대기 중인 친구 요청을 안전하게 단독 SELECT 합니다. (Relation 조인 에러 원천 차단)
+    const { data: requests } = await supabase
+      .from('friends')
+      .select('id, user_id')
+      .eq('friend_id', userId)
+      .eq('status', 'pending');
+
+    if (requests && requests.length > 0) {
+      const requesterIds = requests.map(r => r.user_id);
+      // 요청을 보낸 사람들의 프로필을 인앱 쿼리로 매치하여 안정성 확보
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, nickname, unique_code, avatar_url')
+        .in('id', requesterIds);
+
+      const formattedRequests = requests.map(req => ({
+        id: req.id,
+        user_id: req.user_id,
+        profile: profiles?.find(p => p.id === req.user_id) || { nickname: '익명 사용자' }
+      }));
+      setPendingRequests(formattedRequests);
+    } else {
+      setPendingRequests([]);
+    }
   };
+
+  // 실시간 변경 감지 시 리스트 최신화
+  useEffect(() => {
+    if (!profile.userId) return;
+    const channel = supabase
+      .channel('friends-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'friends' }, () => {
+        loadFriendsData(profile.userId);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [profile.userId]);
 
   useEffect(() => {
     if (!activeRoom) return;
@@ -76,9 +124,8 @@ const Chatting: React.FC = () => {
       .channel(`room-${activeRoom.id}`)
       .on(
         'postgres_changes',
-        { event: 'INSERT', schema: 'publi c', table: 'messages' }, // 👈 filter를 제거하여 이벤트를 무조건 수신합니다.
+        { event: 'INSERT', schema: 'public', table: 'messages' },
         (payload) => {
-          // 내 현재 활성화된 방(activeRoom.id)의 메시지가 맞을 때만 상태 업데이트를 수행합니다.
           if (payload.new && payload.new.room_id === activeRoom.id) {
             setMessages((prev) => {
               if (prev.some((m) => m.id === payload.new.id)) return prev;
@@ -127,6 +174,7 @@ const Chatting: React.FC = () => {
     }
   };
 
+  // 🚀 기존 검증된 addFriendByCode 흐름을 보존하되, 새 status 사양에 맞춰 수정한 요청 전송 핸들러
   const handleAddFriend = async () => {
     if (!profile.userId) return;
     const code = formatUniqueCode(friendCodeInput);
@@ -136,17 +184,96 @@ const Chatting: React.FC = () => {
     }
     setAddingFriend(true);
     setFriendMsg('');
-    const result = await addFriendByCode(profile.userId, code);
-    setAddingFriend(false);
-    if (!result.ok) {
-      setFriendMsg(result.error);
-      return;
+
+    try {
+      const { data: targetProf } = await supabase
+        .from('profiles')
+        .select('id, nickname')
+        .eq('unique_code', code.replace('#', ''))
+        .single();
+
+      if (!targetProf) {
+        setFriendMsg('존재하지 않는 고유코드입니다.');
+        setAddingFriend(false);
+        return;
+      }
+
+      if (targetProf.id === profile.userId) {
+        setFriendMsg('자기 자신은 요청할 수 없습니다.');
+        setAddingFriend(false);
+        return;
+      }
+
+      // 'pending' 상태로 친구 요청 꼽기
+      const { error } = await supabase.from('friends').insert([{
+        user_id: profile.userId,
+        friend_id: targetProf.id,
+        status: 'pending'
+      }]);
+
+      if (error) {
+        setFriendMsg('이미 요청 중이거나 친구 상태입니다.');
+      } else {
+        setFriendCodeInput('');
+        setFriendMsg(`${targetProf.nickname}님에게 친구 요청을 보냈습니다!`);
+        loadFriendsData(profile.userId);
+      }
+    } catch (e) {
+      setFriendMsg('요청 중 오류가 발생했습니다.');
+    } finally {
+      setAddingFriend(false);
     }
-    setFriendCodeInput('');
-    setFriendMsg(`${result.friend.nickname}님을 친구로 추가했습니다!`);
-    await loadFriends(profile.userId);
-    if (result.room) setActiveRoom(result.room);
-    setSidebarTab('friends');
+  };
+
+  // 🚀 친구 요청 수락 핵심 핸들러
+  const handleAcceptRequest = async (requestId: number, requesterId: string) => {
+    if (!profile.userId) return;
+    try {
+      // 1. 수락 완료 시 맵핑될 실시간 DM방 개설
+      const { data: newRoom } = await supabase
+        .from('chat_rooms')
+        .insert([{
+          name: '개인 DM',
+          type: 'dm',
+          dm_key: `${requesterId}_${profile.userId}`
+        }])
+        .select()
+        .single();
+
+      if (!newRoom) return;
+
+      // 2. 온 요청 수락 상태로 업데이트 및 방 연동
+      await supabase
+        .from('friends')
+        .update({ status: 'accepted', dm_room_id: newRoom.id })
+        .eq('id', requestId);
+
+      // 3. 상대방 시점에서도 내가 친구 목록에 수락 완료되도록 상호 교차 생성
+      await supabase
+        .from('friends')
+        .insert([{
+          user_id: profile.userId,
+          friend_id: requesterId,
+          status: 'accepted',
+          dm_room_id: newRoom.id
+        }]);
+
+      alert('친구 요청을 수락했습니다!');
+      loadFriendsData(profile.userId);
+    } catch (err) {
+      alert('수락 처리 중 오류가 발생했습니다.');
+    }
+  };
+
+  // 🚀 친구 요청 거절 핸들러
+  const handleRejectRequest = async (requestId: number) => {
+    try {
+      await supabase.from('friends').delete().eq('id', requestId);
+      alert('친구 요청을 거절했습니다.');
+      loadFriendsData(profile.userId);
+    } catch (err) {
+      alert('거절 처리 중 오류가 발생했습니다.');
+    }
   };
 
   const fetchMessages = async (roomId: string) => {
@@ -373,7 +500,7 @@ const Chatting: React.FC = () => {
         ) : (
           <div className="dc-channel-section dc-friends-section">
             <div className="dc-section-label">
-              <span>친구 추가</span>
+              <span>친구 요청 보내기</span>
             </div>
             <div className="dc-friend-add">
               <span className="dc-code-prefix">#</span>
@@ -386,13 +513,48 @@ const Chatting: React.FC = () => {
                 onChange={(e) => setFriendCodeInput(extractUniqueCodeDigits(e.target.value).slice(0, 16))}
               />
               <button type="button" onClick={handleAddFriend} disabled={addingFriend}>
-                {addingFriend ? '…' : '추가'}
+                {addingFriend ? '…' : '요청'}
               </button>
             </div>
-            {friendMsg && <p className={`dc-friend-msg ${friendMsg.includes('추가했') ? 'ok' : 'err'}`}>{friendMsg}</p>}
+            {friendMsg && <p className={`dc-friend-msg ${friendMsg.includes('보냈습') ? 'ok' : 'err'}`}>{friendMsg}</p>}
+
+            {/* 🚀 받은 친구 요청 대기 리스트 UI */}
+            {pendingRequests.length > 0 && (
+              <>
+                <div className="dc-section-label alert-label">
+                  <span>받은 친구 요청 ({pendingRequests.length})</span>
+                </div>
+                <ul className="dc-channel-list dc-pending-list">
+                  {pendingRequests.map((req) => (
+                    <li key={req.id} className="dc-pending-item">
+                      <div className="dc-pending-user">
+                        <span className="dc-pending-name">{req.profile?.nickname}</span>
+                        <span className="dc-pending-code">#{req.profile?.unique_code}</span>
+                      </div>
+                      <div className="dc-pending-actions">
+                        <button 
+                          type="button" 
+                          className="dc-accept-btn" 
+                          onClick={() => handleAcceptRequest(req.id, req.user_id)}
+                        >
+                          ✔
+                        </button>
+                        <button 
+                          type="button" 
+                          className="dc-reject-btn" 
+                          onClick={() => handleRejectRequest(req.id)}
+                        >
+                          ❌
+                        </button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
 
             <div className="dc-section-label">
-              <span>친구 목록</span>
+              <span>친구 목록 (DM)</span>
             </div>
             <ul className="dc-channel-list">
               {friends.map((f) => (
@@ -409,7 +571,7 @@ const Chatting: React.FC = () => {
                 </li>
               ))}
               {friends.length === 0 && (
-                <li className="dc-empty-hint">고유코드로 친구를 추가하세요.</li>
+                <li className="dc-empty-hint">고유코드로 친구 요청을 보내보세요.</li>
               )}
             </ul>
           </div>
