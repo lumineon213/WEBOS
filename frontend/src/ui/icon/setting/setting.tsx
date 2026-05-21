@@ -3,9 +3,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './setting.css';
 import { supabase } from '../../../utils/supabase';
-import { useAuth } from '../../../hooks/useAuth';
-import { ROLE_ADMIN, normalizeRole, getLoginIdFromEmail } from '../../../utils/auth';
-import { ensureProfileUniqueCode } from '../../../utils/uniqueCode';
 
 interface SettingProps {
   currentBackground: { type: 'color' | 'image'; value: string };
@@ -20,7 +17,6 @@ const themePresets = [
 ];
 
 const Setting: React.FC<SettingProps> = ({ currentBackground, onBackgroundChange }) => {
-  const { isAdmin } = useAuth();
   const [userId, setUserId] = useState('');
   const [nickname, setNickname] = useState('');
   const [role, setRole] = useState('회원');
@@ -36,18 +32,23 @@ const Setting: React.FC<SettingProps> = ({ currentBackground, onBackgroundChange
     const loadProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const currentId = getLoginIdFromEmail(user.email);
+        const currentId = user.email.split('@')[0];
         setUserId(currentId);
+        setRole(currentId === 'admin' ? '관리자' : '회원');
 
         let { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-        setRole(normalizeRole(profile?.role, currentId));
 
-        const code = await ensureProfileUniqueCode(user.id, currentId, profile?.unique_code);
+        if (profile && !profile.unique_code) {
+          const randomCode = "#" + Array.from({length: 16}, () => Math.floor(Math.random() * 10)).join('');
+          const { data: updated } = await supabase.from('profiles').update({ unique_code: randomCode }).eq('id', user.id).select().single();
+          profile = updated;
+        }
+
         if (profile) {
           setNickname(profile.nickname || '');
           setAvatar(profile.avatar_url || '');
+          setUniqueCode(profile.unique_code || '');
         }
-        setUniqueCode(code);
       }
     };
     loadProfile();
@@ -65,14 +66,8 @@ const Setting: React.FC<SettingProps> = ({ currentBackground, onBackgroundChange
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     setIsLoading(true);
-    const loginId = getLoginIdFromEmail(user.email);
-    const { data: currentProfile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    const saveRole = isAdmin ? role : normalizeRole(currentProfile?.role, loginId);
-    const { data: prof } = await supabase.from('profiles').select('unique_code').eq('id', user.id).single();
-    const fixedCode = await ensureProfileUniqueCode(user.id, loginId, prof?.unique_code);
-    setUniqueCode(fixedCode);
     const { error } = await supabase.from('profiles').upsert({ 
-      id: user.id, nickname, role: saveRole, avatar_url: avatar, unique_code: fixedCode, updated_at: new Date() 
+      id: user.id, nickname, role, avatar_url: avatar, unique_code: uniqueCode, updated_at: new Date() 
     });
     setIsLoading(false);
     if (!error) { alert('프로필이 업데이트되었습니다! ✨'); setIsEditing(false); }
@@ -121,13 +116,8 @@ const Setting: React.FC<SettingProps> = ({ currentBackground, onBackgroundChange
             ) : (
               <>
                 <p className="p-name">{nickname || userId} <span className="p-id">({userId})</span> <button onClick={() => setIsEditing(true)} className="profile-edit-btn">편집</button></p>
-                <p className="p-role" style={{ color: role === ROLE_ADMIN ? '#ff66aa' : '#aaa' }}>{role}</p>
-                {!isAdmin && <p className="p-role-hint">일반 회원은 관리자 전용 메뉴를 사용할 수 없습니다.</p>}
-                <p className="p-code-label">고유코드 (# + 16자리)</p>
-                <p className="p-code-copyable" title="클릭하여 복사" onClick={copyToClipboard}>
-                  {uniqueCode || '생성 중...'}
-                </p>
-                <p className="p-code-hint">친구 추가 시 이 번호를 공유하세요. 닉네임이 같아도 구분됩니다.</p>
+                <p className="p-role" style={{ color: role === '관리자' ? '#ff66aa' : '#aaa' }}>{role}</p>
+                <p className="p-code-copyable" title="클릭하여 복사" onClick={copyToClipboard}>{uniqueCode || '#생성 중...'}</p>
               </>
             )}
           </div>
