@@ -72,20 +72,23 @@ const Chatting: React.FC = () => {
     fetchParticipants(activeRoom.id);
     setSearchQuery('');
 
-    const channel = supabase
-      .channel(`room-${activeRoom.id}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages', filter: `room_id=eq.${activeRoom.id}` },
-        (payload) => {
+  const channel = supabase
+    .channel(`room-${activeRoom.id}`)
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'messages' }, // 👈 filter를 제거하여 이벤트를 무조건 수신합니다.
+      (payload) => {
+        // 내 현재 활성화된 방(activeRoom.id)의 메시지가 맞을 때만 상태 업데이트를 수행합니다.
+        if (payload.new && payload.new.room_id === activeRoom.id) {
           setMessages((prev) => {
             if (prev.some((m) => m.id === payload.new.id)) return prev;
             return [...prev, payload.new];
           });
           fetchParticipants(activeRoom.id);
         }
-      )
-      .subscribe();
+      }
+    )
+    .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [activeRoom]);
