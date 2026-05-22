@@ -1,0 +1,331 @@
+/* ==========================================================================
+   📌 Mochi WebOS - 미니멀 감성 캘린더 & To-Do 통합 스타일시트
+   ========================================================================== */
+
+/* 1. 전체 레이아웃 컨테이너 */
+.calendar-todo-container {
+  display: flex;
+  gap: 24px;
+  padding: 24px;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #fffaf1; /* 부드러운 내추럴 크림 배경 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #333333;
+}
+
+/* 2. 좌측: 달력(Calendar) 섹션 */
+.calendar-left-box {
+  flex: 1.2;
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 24px;
+  box-shadow: 0 4px 20px rgba(165, 140, 110, 0.08);
+  display: flex;
+  flex-direction: column;
+}
+
+/* 달력 상단 네비게이션 헤더 */
+.calendar-nav-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.calendar-nav-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c2c2c;
+  letter-spacing: -0.5px;
+}
+
+.calendar-nav-header button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #a58c6e;
+  padding: 8px 12px;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.calendar-nav-header button:hover {
+  background-color: #f7f3eb;
+  color: #e67e22;
+}
+
+/* 요일 표시 그리드 */
+.calendar-week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  text-align: center;
+  margin-bottom: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #a58c6e;
+}
+
+/* 실제 날짜 그리드 (테두리 없는 미니멀 스타일) */
+.calendar-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  row-gap: 12px;
+  column-gap: 8px;
+  text-align: center;
+  flex: 1;
+}
+
+.calendar-day-cell {
+  padding: 12px 0;
+  border-radius: 14px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #444444;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.calendar-day-cell:hover:not(.selected) {
+  background-color: #fcf8f2;
+  color: #e67e22;
+}
+
+/* 날짜 선택 시 스타일 (소프트 탠 오렌지 포인트) */
+.calendar-day-cell.selected {
+  font-weight: 700;
+  background-color: #ffe8d1;
+  color: #e67e22;
+}
+
+/* 일정 등록 표시용 하단 도트(앵두) */
+.todo-indicator-dot {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+.todo-indicator-dot.ongoing { background-color: #ff66aa; }
+.todo-indicator-dot.completed { background-color: #4ec0a6; }
+
+
+/* 3. 우측: 아날로그 줄공책 To-Do List 섹션 */
+.todo-right-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 24px;
+  box-shadow: 0 4px 20px rgba(165, 140, 110, 0.08);
+  border: 1px solid rgba(165, 140, 110, 0.1);
+}
+
+.todo-right-box h4 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333333;
+}
+
+/* 줄공책 디자인 스코프 */
+.notebook-lines {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 20px;
+  padding-right: 4px;
+}
+
+.notebook-lines::-webkit-scrollbar {
+  width: 4px;
+}
+.notebook-lines::-webkit-scrollbar-thumb {
+  background-color: #e4dad0;
+  border-radius: 10px;
+}
+
+.notebook-empty-text {
+  color: #b0a496;
+  font-size: 13px;
+  text-align: center;
+  margin-top: 40px;
+}
+
+/* 줄노트 아이템 행 */
+.notebook-line-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 4px;
+  border-bottom: 1px dashed #e4dad0; /* 아날로그 감성 점선 처리 */
+  font-size: 14px;
+  animation: fadeIn 0.25s ease;
+}
+
+.notebook-line-item input[type="checkbox"] {
+  margin-right: 12px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #e67e22;
+}
+
+.notebook-line-item .todo-text {
+  flex: 1;
+  color: #333333;
+  transition: color 0.2s;
+}
+
+.notebook-line-item .todo-text.done {
+  text-decoration: line-through;
+  color: #b0a496;
+}
+
+/* 아이템 내부 액션 버튼 */
+.notebook-line-item .action-btn {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px;
+  margin-left: 6px;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.notebook-line-item .action-btn:hover {
+  opacity: 1;
+}
+
+
+/* 4. 하단 추가 버튼 인터페이스 */
+.add-todo-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 14px;
+  background-color: #f7f3eb;
+  border: 1px solid rgba(165, 140, 110, 0.15);
+  border-radius: 14px;
+  transition: all 0.2s ease;
+}
+
+.add-todo-trigger:hover {
+  background-color: #ffe8d1;
+  border-color: #e67e22;
+}
+
+.add-todo-trigger span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #555555;
+}
+.add-todo-trigger:hover span {
+  color: #e67e22;
+}
+
+
+/* 5. 조작용 독립 팝업 모달 시스템 */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(44, 44, 44, 0.25); /* 연한 소프트 다크 오버레이 */
+  backdrop-filter: blur(2px); /* 모달 뒷화면 흐림 처리 */
+  zIndex: 5000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content-card {
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 20px;
+  width: 320px;
+  box-shadow: 0 10px 30px rgba(60, 50, 40, 0.12);
+  border: 1px solid rgba(165, 140, 110, 0.1);
+  animation: scaleUp 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.modal-content-card h5 {
+  margin: 0 0 14px 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.modal-content-card input[type="text"] {
+  width: 100%;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  border: 1px solid #e4dad0;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.modal-content-card input[type="text"]:focus {
+  border-color: #e67e22;
+}
+
+/* 모달 버튼 세트 */
+.modal-btn-group {
+  display: flex;
+  gap: 10px;
+}
+
+.modal-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.modal-btn.confirm {
+  background-color: #e67e22;
+  color: #ffffff;
+}
+.modal-btn.confirm:hover { background-color: #d35400; }
+
+.modal-btn.cancel {
+  background-color: #f2ede4;
+  color: #666666;
+}
+.modal-btn.cancel:hover { background-color: #e4dad0; }
+
+.modal-btn.danger {
+  background-color: #ff66aa;
+  color: white;
+}
+
+
+/* 6. 애니메이션 키프레임 */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}

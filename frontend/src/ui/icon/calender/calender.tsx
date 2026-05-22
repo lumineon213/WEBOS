@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { CiCirclePlus } from 'react-icons/ci';
+// @ts-ignore: CSS module import without type declaration
+import './calender.css';
 
 // 1. 데이터 모델 정의
 interface TodoItem {

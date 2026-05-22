@@ -149,35 +149,64 @@ const Board: React.FC = () => {
               <h1>{tab === 'explore' ? '탐색' : '홈'}</h1>
             </header>
 
-            {tab === 'home' && <BoardCompose onPosted={loadFeed} />}
-
-            {tab === 'explore' && (
-              <div className="x-explore-search">
-                <input
-                  type="search"
-                  placeholder="게시물 검색"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
+            {tab === 'home' && (
+              <>
+                <BoardCompose onPosted={loadFeed} />
+                <div className="board-view-toggle">
+                  <div className="view-toggle-pill">
+                    <button 
+                      type="button"
+                      className={`pill-btn ${viewMode === 'x' ? 'active' : ''}`} 
+                      onClick={() => setViewMode('x')}
+                    >
+                      <span className="pill-icon">📱</span>
+                      <span>피드</span>
+                    </button>
+                    <button 
+                      type="button"
+                      className={`pill-btn ${viewMode === 'fmkorea' ? 'active' : ''}`} 
+                      onClick={() => setViewMode('fmkorea')}
+                    >
+                      <span className="pill-icon">📋</span>
+                      <span>게시판</span>
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
 
-            <div className="board-view-toggle">
-              <button 
-                type="button"
-                className={viewMode === 'x' ? 'active' : ''} 
-                onClick={() => setViewMode('x')}
-              >
-                📱 트위터 스타일
-              </button>
-              <button 
-                type="button"
-                className={viewMode === 'fmkorea' ? 'active' : ''} 
-                onClick={() => setViewMode('fmkorea')}
-              >
-                📋 PC게시판 스타일
-              </button>
-            </div>
+            {tab === 'explore' && (
+              <>
+                <div className="x-explore-search">
+                  <input
+                    type="search"
+                    placeholder="게시물 검색"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
+                <div className="board-view-toggle">
+                  <div className="view-toggle-pill">
+                    <button 
+                      type="button"
+                      className={`pill-btn ${viewMode === 'x' ? 'active' : ''}`} 
+                      onClick={() => setViewMode('x')}
+                    >
+                      <span className="pill-icon">📱</span>
+                      <span>피드</span>
+                    </button>
+                    <button 
+                      type="button"
+                      className={`pill-btn ${viewMode === 'fmkorea' ? 'active' : ''}`} 
+                      onClick={() => setViewMode('fmkorea')}
+                    >
+                      <span className="pill-icon">📋</span>
+                      <span>게시판</span>
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
 
             <div className="x-feed">
               {loading ? (

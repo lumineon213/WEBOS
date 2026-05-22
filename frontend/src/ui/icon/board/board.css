@@ -13,6 +13,7 @@
   --x-feed-max: 600px;
 
   display: flex;
+  justify-content: center; /* 🌟 추가: 앱 컨텐츠 전체를 화면 정중앙으로 배치 */
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -114,19 +115,19 @@
 .x-main {
   flex: 1;
   min-width: 0;
-  max-width: var(--x-feed-max); /* 기본 600px 고정 */
+  /* max-width: var(--x-feed-max); 🌟 기존 코드 삭제 혹은 주석 처리: 600px 고정 한계를 제거합니다. */
+  max-width: 100%; /* 🌟 추가: 부모 창 크기에 맞춰 100% 가로 확장이 가능하도록 열어줍니다. */
   border-right: 1px solid var(--x-border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: max-width 0.2s ease-in-out; /* 🚀 모드 전환 시 부드러운 가로 애니메이션 효과 추가 */
+  transition: max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* 🚀 [핵심 우회 기능 구현]
-   메인 피드 레이아웃 하위에 PC게시판(.fm-board-container)이 활성화되어 렌더링될 경우,
-   부모 요소인 .x-main의 가로 폭 제한을 950px로 대폭 자동 확장시켜 버립니다! */
+
+/* PC게시판 활성 시 넓어지는 영역 */
 .x-main:has(.fm-board-container) {
-  max-width: 9500px; 
+  max-width: 1200px; /* 🌟 기존 860px에서 1200px(혹은 100% 전체)로 확장하여 가로 공간을 충분히 확보합니다. */
 }
 
 .x-main-header {
@@ -737,8 +738,8 @@
 ============================================= */
 .fm-board-container {
   width: 100%;
-  padding: 16px;
-  background: #ffffff; /* 기본 배경 흰색 */
+  padding: 12px 16px 24px;
+  background: #ffffff;
   box-sizing: border-box;
 }
 
@@ -746,36 +747,40 @@
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  font-size: 14px;
-  table-layout: fixed; /* 🚀 칼럼 자동 할당 활성화 */
+  font-size: 13.5px;
+  table-layout: fixed;
 }
 
 .fm-table th, .fm-table td {
-  padding: 12px 10px;
-  border-bottom: 1px solid #e3e5e8; /* 연하고 깔끔한 화이트용 경계선 */
+  padding: 11px 10px;
+  border-bottom: 1px solid #eff1f3;
   vertical-align: middle;
   box-sizing: border-box;
 }
 
 .fm-table th {
-  background: #f2f3f5; /* 헤더 영역 그레이 처리 */
-  color: #4e5058; /* 어두운 글씨색 */
+  background: #f7f8fa;
+  color: #606778;
   font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 2px solid #e6e8ed;
 }
 
 .fm-tr {
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background 0.12s ease;
 }
 
 .fm-tr:hover {
-  background: #f8f9fa; /* 마우스 올렸을 때 은은한 호버 효과 */
+  background: #f5f7ff;
 }
 
-/* 🌟 제목 칸에 auto 폭을 부여하여 빈 공간을 100% 꽉 채우도록 조율 */
+/* 제목 칸 */
 .fm-th-title, .fm-td-title {
-  width: auto; 
-  color: #060607;
+  width: auto;
+  color: #111827;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -788,17 +793,18 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   vertical-align: middle;
+  font-weight: 500;
 }
 
 .fm-title-text:hover {
   text-decoration: underline;
-  color: #5865f2; /* 제목 호버 시 포인트 컬러 강조 */
+  color: #1d9bf0;
 }
 
 .fm-reply-count {
-  color: #f43f5e; /* 에펨코리아 시그니처 붉은 댓글 폰트색 */
-  font-weight: bold;
-  margin-left: 6px;
+  color: #1d9bf0;
+  font-weight: 600;
+  margin-left: 5px;
   font-size: 12px;
   vertical-align: middle;
 }
@@ -807,121 +813,133 @@
   margin-left: 4px;
   font-size: 12px;
   vertical-align: middle;
+  opacity: 0.6;
 }
 
-/* 🚀 주변 메타 칼럼들을 고정폭으로 묶어 제목 칸의 최대 확장을 강제합니다 */
-.fm-th-id, .fm-td-id { width: 55px; text-align: center; color: #6d6f78; }
-.fm-th-date, .fm-td-date { width: 75px; text-align: center; color: #6d6f78; }
-.fm-th-views, .fm-td-views { width: 65px; text-align: center; color: #6d6f78; }
-.fm-th-likes, .fm-td-likes-count { width: 55px; text-align: center; color: #00b0f4; font-weight: 600; }
+/* 메타 칼럼 */
+.fm-th-id, .fm-td-id { width: 50px; text-align: center; color: #adb5bd; font-size: 12px; }
+.fm-th-date, .fm-td-date { width: 72px; text-align: center; color: #8b949e; font-size: 12px; }
+.fm-th-views, .fm-td-views { width: 60px; text-align: center; color: #8b949e; font-size: 12px; }
+.fm-th-likes, .fm-td-likes-count { width: 52px; text-align: center; color: #1d9bf0; font-weight: 600; font-size: 12px; }
 
-.fm-td-author { 
-  width: 110px; 
-  color: #313338; 
+.fm-td-author {
+  width: 100px;
+  color: #4b5563;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 12.5px;
 }
 
 /* ==========================================
-   🚀 게시판 보기 모드 전환 버튼 (화이트 테마)
+   💊 알약형 뷰 모드 토글
 ============================================= */
 .board-view-toggle {
   display: flex;
-  gap: 10px;
-  padding: 12px 16px;
-  background: #ffffff; /* 버튼 바 배경 흰색 고정 */
-  border-bottom: 1px solid #e3e5e8;
+  align-items: center;
+  padding: 10px 16px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--x-border);
 }
 
-.board-view-toggle button {
+.view-toggle-pill {
+  display: inline-flex;
+  align-items: center;
+  background: #f0f2f5;
+  border-radius: 9999px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.pill-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  background: #f2f3f5; /* 기본 버튼 그레이 바탕 */
-  color: #4e5058;
-  border: 1px solid #e3e5e8;
-  padding: 8px 14px;
-  border-radius: 6px;
+  gap: 5px;
+  background: transparent;
+  color: #5a6370;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 9999px;
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
-  transition: all 0.15s ease-in-out;
+  transition: all 0.18s ease;
+  white-space: nowrap;
 }
 
-.board-view-toggle button:hover {
-  color: #060607;
-  background: #e3e5e8;
-  border-color: #ccced3;
+.pill-btn:hover:not(.active) {
+  background: rgba(0, 0, 0, 0.06);
+  color: #1d2129;
 }
 
-.board-view-toggle button.active {
-  background: #5865f2; /* 활성화 시 디코드 퍼플 */
-  color: #ffffff;
+.pill-btn.active {
+  background: #ffffff;
+  color: #1d9bf0;
   font-weight: 600;
-  border-color: #5865f2;
-  box-shadow: 0 2px 6px rgba(88, 101, 242, 0.2);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
 }
 
-.board-view-toggle button.active:hover {
-  background: #4752c4;
-  border-color: #4752c4;
+.pill-icon {
+  font-size: 14px;
+  line-height: 1;
 }
 
 /* ==========================================
-   🚀 fm-board 페이징 바 스타일링 (화이트 테마 매칭)
+   🔢 fm-board 페이징 바
 ============================================= */
 .fm-pagination {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   margin-top: 20px;
-  padding: 10px 0;
-  background: #ffffff;
+  padding: 8px 0;
 }
 
 .fm-page-btn {
-  background: #f2f3f5;
-  color: #4e5058;
-  border: 1px solid #e3e5e8;
+  background: transparent;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
   padding: 5px 12px;
   font-size: 13px;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.15s;
+  font-weight: 500;
 }
 
 .fm-page-btn:disabled {
-  opacity: 0.4;
+  opacity: 0.3;
   cursor: not-allowed;
 }
 
 .fm-page-btn:not(:disabled):hover {
-  background: #e3e5e8;
-  color: #060607;
-  border-color: #ccced3;
+  background: #f3f4f6;
+  color: #111827;
+  border-color: #d1d5db;
 }
 
 .fm-page-num {
   background: transparent;
-  color: #6d6f78;
+  color: #6b7280;
   border: none;
   padding: 5px 10px;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 500;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
+  min-width: 32px;
+  text-align: center;
   transition: all 0.15s;
 }
 
 .fm-page-num:hover {
-  color: #060607;
-  background: #f2f3f5;
+  color: #1d9bf0;
+  background: #e8f5fd;
 }
 
 .fm-page-num.active {
-  color: #ffffff;
-  background: #5865f2; /* 활성화 페이지 퍼플 매칭 */
-  font-weight: bold;
+  color: #1d9bf0;
+  background: #e8f5fd;
+  font-weight: 700;
 }
