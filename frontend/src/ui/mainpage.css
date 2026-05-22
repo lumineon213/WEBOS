@@ -120,6 +120,9 @@
   z-index: 2000;
   overflow: hidden;
   animation: slideUp 0.3s ease-out;
+  will-change: transform, opacity;
+  transform-style: preserve-3d;
+
 }
 
 @keyframes slideUp {
@@ -134,6 +137,8 @@
   align-items: center;
   gap: 15px;
   border-bottom: 1px solid #FFDEE9;
+  border-top-left-radius: 27px;
+  border-top-right-radius: 27px;
 }
 
 .user-avatar { font-size: 30px; background: white; padding: 10px; border-radius: 50%; }
@@ -213,12 +218,16 @@
 }
 
 .start-btn {
+  /* 기존 width 고정 속성이 있다면 제거하거나 min-width로 대체 */
+  min-width: 70px; 
+  padding: 0 15px; /* 🌟 좌우 여백을 주어 글자 수(닉네임 길이)에 따라 자연스럽게 가로 폭이 늘어나도록 유연성 확보 */
+  height: 100%;
+  background: transparent;
   border: none;
-  background: #B5FFFC;
-  padding: 8px 20px;
-  border-radius: 15px;
+  font-size: 15px;
   font-weight: bold;
   cursor: pointer;
+  white-space: nowrap; /* 🌟 닉네임이 길어져도 위아래로 줄바꿈되지 않도록 한 줄 고정 처리 */
 }
 
 .start-btn.active { background: #FFDEE9; }
@@ -229,3 +238,4 @@
 .taskbar-app.minimized { opacity: 0.4; }
 .taskbar-app.active::after { content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: #666; border-radius: 50%; }
 .taskbar-time { font-size: 14px; font-weight: bold; color: #666; margin-left: 10px; }
+

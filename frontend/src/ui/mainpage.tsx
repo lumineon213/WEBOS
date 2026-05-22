@@ -262,12 +262,12 @@ const MainPage: React.FC = () => {
       </div>
 
       {/* 하단 작업표시줄 */}
-      <div className="taskbar-container">
-        <div className="floating-taskbar" onClick={(e) => e.stopPropagation()}>
-          <button className={`start-btn ${isStartMenuOpen ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); setIsStartMenuOpen(!isStartMenuOpen); }}>
-            Mochi
-          </button>
-          <div className="divider" />
+        <div className="taskbar-container">
+          <div className="floating-taskbar" onClick={(e) => e.stopPropagation()}>
+            <button className={`start-btn ${isStartMenuOpen ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); setIsStartMenuOpen(!isStartMenuOpen); }}>
+              {nickname || 'Mochi'} {/* 🌟 로그인된 닉네임이 있으면 출력하고, 로딩 전이거나 없을 때만 기본값 'Mochi' 배치 */}
+            </button>
+            <div className="divider" />
           {windows.map(win => (
             <div 
               key={win.id} 

@@ -1,16 +1,15 @@
+// @ts-nocheck
 import React, { useState, useEffect } from 'react';
 import { CiCirclePlus } from 'react-icons/ci';
-// @ts-ignore: CSS module import without type declaration
 import './calender.css';
+import { supabase } from '../../../utils/supabase'; // 프로젝트 내부 Supabase 인스턴스 경로 확인 필요
 
-// 1. 데이터 모델 정의
 interface TodoItem {
-  id: string;
+  id: string; // Supabase UUID 매핑
   text: string;
   isCompleted: boolean;
 }
 
-// 날짜별로 Todo 배열을 관리하는 객체 구조 (예: { "2026-05-22": [...] })
 interface MonthlyTodos {
   [dateStr: string]: TodoItem[];
 }
@@ -20,58 +19,56 @@ interface CalenderProps {
 }
 
 const Calender: React.FC<CalenderProps> = ({ onClose = () => {} }) => {
-  // 2. 상태(State) 관리
-  const [currentDate, setCurrentDate] = useState<Date>(new Date()); // 현재 달력의 기준 년/월
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [selectedDateStr, setSelectedDateStr] = useState<string>(
-    new Date().toISOString().split('T')[0] // 오늘 날짜 기본 선택 ("YYYY-MM-DD")
+    `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`
   );
   
-  // 전체 날짜별 투두 저장소
-  const [allTodos, setAllTodos] = useState<MonthlyTodos>({
-    "2026-05-22": [
-      { id: "1", text: "Mochi OS 기능 테스트하기", isCompleted: false },
-      { id: "2", text: "GangHyun95 달력 알고리즘 이식", isCompleted: true }
-    ]
-  });
-
+  // 전체 날짜별 일정 상태 관리
+  const [allTodos, setAllTodos] = useState<MonthlyTodos>({});
   const [taskText, setTaskText] = useState<string>("");
   const [isModalOpen, setModalOpen] = useState<boolean>(false);
   const [activeTodoId, setActiveTodoId] = useState<string | null>(null);
   const [mode, setMode] = useState<"add" | "mod" | "del" | "alert">("add");
 
-  // 현재 선택된 날짜의 할 일 목록만 쏙 뽑아오기
   const currentDayTodos = allTodos[selectedDateStr] || [];
 
-  // 3. 달력 그리드 생성 함수 (GangHyun95 소스의 Date 핵심 알고리즘 기반)
-  const generateCalendarDays = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
+  // 🌟 [READ] 컴포넌트 마운트 시 Supabase에서 로그인한 유저의 전체 일정 데이터 조회
+  useEffect(() => {
+    const fetchAllTodos = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    const firstDayInstance = new Date(year, month, 1);
-    const startDayOfWeek = firstDayInstance.getDay(); // 1일의 시작 요일 (0: 일요일 ~ 6: 토요일)
-    const totalDaysInMonth = new Date(year, month + 1, 0).getDate(); // 이번 달 총 일수
+      const { data, error } = await supabase
+        .from('calendar_todos')
+        .select('*')
+        .order('created_at', { ascending: true });
 
-    const daysArray: (Date | null)[] = [];
+      if (error) {
+        console.error("일정 로드 실패:", error.message);
+        return;
+      }
 
-    // 1일 시작 전 빈 공백 채우기
-    for (let i = 0; i < startDayOfWeek; i++) {
-      daysArray.push(null);
-    }
+      // 수신한 단일 테이블 리스트 데이터를 { "YYYY-MM-DD": [...] } 맵 형태로 가공 파싱
+      const todoMap: MonthlyTodos = {};
+      data.forEach((row: any) => {
+        if (!todoMap[row.date_str]) {
+          todoMap[row.date_str] = [];
+        }
+        todoMap[row.date_str].push({
+          id: row.id,
+          text: row.task_text,
+          isCompleted: row.is_completed
+        });
+      });
+      setAllTodos(todoMap);
+    };
 
-    // 실제 날짜 채우기
-    for (let day = 1; day <= totalDaysInMonth; day++) {
-      daysArray.push(new Date(year, month, day));
-    }
+    fetchAllTodos();
+  }, []);
 
-    return daysArray;
-  };
-
-  const changeMonth = (direction: 'prev' | 'next') => {
-    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + (direction === 'next' ? 1 : -1), 1));
-  };
-
-  // 4. To-Do List CRUD 로직 및 모달 제출 핸들러
-  const handleAddOrUpdateTodo = (e?: React.FormEvent) => {
+  // 🌟 [CUD] 할 일 추가 / 수정 / 삭제 모달 통합 핸들러
+  const handleAddOrUpdateTodo = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
     if (!taskText.trim().length && mode !== "del") {
@@ -79,24 +76,69 @@ const Calender: React.FC<CalenderProps> = ({ onClose = () => {} }) => {
       return;
     }
 
-    // 깊은 복사로 상태 불변성 유지
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     const updatedTodos = { ...allTodos };
     if (!updatedTodos[selectedDateStr]) {
       updatedTodos[selectedDateStr] = [];
     }
 
     if (mode === "add") {
-      const newTodo: TodoItem = {
-        id: Date.now().toString(),
-        text: taskText,
-        isCompleted: false
-      };
-      updatedTodos[selectedDateStr].push(newTodo);
+      // Supabase Insert 수행
+      const { data, error } = await supabase
+        .from('calendar_todos')
+        .insert([
+          { 
+            user_id: user.id, 
+            date_str: selectedDateStr, 
+            task_text: taskText, 
+            is_completed: false 
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        alert("추가 실패: " + error.message);
+        return;
+      }
+
+      // DB 저장이 성공하면 반환된 실제 id 기반으로 화면 상태 동기화
+      updatedTodos[selectedDateStr].push({
+        id: data.id,
+        text: data.task_text,
+        isCompleted: data.is_completed
+      });
+
     } else if (mode === "mod") {
+      // Supabase Update 수행
+      const { error } = await supabase
+        .from('calendar_todos')
+        .update({ task_text: taskText })
+        .eq('id', activeTodoId);
+
+      if (error) {
+        alert("수정 실패: " + error.message);
+        return;
+      }
+
       updatedTodos[selectedDateStr] = updatedTodos[selectedDateStr].map(todo =>
         todo.id === activeTodoId ? { ...todo, text: taskText } : todo
       );
+
     } else if (mode === "del") {
+      // Supabase Delete 수행
+      const { error } = await supabase
+        .from('calendar_todos')
+        .delete()
+        .eq('id', activeTodoId);
+
+      if (error) {
+        alert("삭제 실패: " + error.message);
+        return;
+      }
+
       updatedTodos[selectedDateStr] = updatedTodos[selectedDateStr].filter(todo => todo.id !== activeTodoId);
     }
 
@@ -105,8 +147,18 @@ const Calender: React.FC<CalenderProps> = ({ onClose = () => {} }) => {
     setModalOpen(false);
   };
 
-  // 체크박스 완료 여부 토글 함수
-  const toggleTodoComplete = (id: string) => {
+  // 🌟 [UPDATE] 체크박스 완료 상태 토글 함수
+  const toggleTodoComplete = async (id: string, currentStatus: boolean) => {
+    const { error } = await supabase
+      .from('calendar_todos')
+      .update({ is_completed: !currentStatus })
+      .eq('id', id);
+
+    if (error) {
+      alert("상태 변경 실패: " + error.message);
+      return;
+    }
+
     const updatedTodos = { ...allTodos };
     updatedTodos[selectedDateStr] = updatedTodos[selectedDateStr].map(todo =>
       todo.id === id ? { ...todo, isCompleted: !todo.isCompleted } : todo
@@ -121,43 +173,55 @@ const Calender: React.FC<CalenderProps> = ({ onClose = () => {} }) => {
     setModalOpen(true);
   };
 
-  // 5. ESC, Enter 단축키 감지 훅 이벤트 처리
+  const changeMonth = (direction: 'prev' | 'next') => {
+    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + (direction === 'next' ? 1 : -1), 1));
+  };
+
+  const generateCalendarDays = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDayInstance = new Date(year, month, 1);
+    const startDayOfWeek = firstDayInstance.getDay();
+    const totalDaysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const daysArray: (Date | null)[] = [];
+    for (let i = 0; i < startDayOfWeek; i++) daysArray.push(null);
+    for (let day = 1; day <= totalDaysInMonth; day++) daysArray.push(new Date(year, month, day));
+    return daysArray;
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === "Escape") {
         if (isModalOpen) setModalOpen(false);
-        else onClose(); // 모달이 없으면 윈도우 창 닫기
+        else onClose();
       } else if (e.code === "Enter" && isModalOpen && mode !== "alert") {
         handleAddOrUpdateTodo();
       }
     };
-
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [taskText, mode, isModalOpen]);
 
   return (
     <div className="calendar-todo-container" style={{ display: 'flex', gap: '20px', padding: '20px', height: '100%', boxSizing: 'border-box' }}>
-      
-      {/* 왼쪽: 달력 영역 */}
+      {/* 좌측: 달력 그리드 스코프 */}
       <div className="calendar-left-box" style={{ flex: 1.2, background: '#fff', padding: '15px', borderRadius: '20px', border: '2px solid #FFDEE9' }}>
         <div className="calendar-nav-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-          <button onClick={() => changeMonth('prev')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px' }}>◀</button>
+          <button onClick={() => changeMonth('prev')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>◀</button>
           <h3 style={{ margin: 0 }}>{currentDate.getFullYear()}년 {currentDate.getMonth() + 1}월</h3>
-          <button onClick={() => changeMonth('next')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '16px' }}>▶</button>
+          <button onClick={() => changeMonth('next')} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>▶</button>
         </div>
 
-        {/* 요일 헤더 */}
-        <div className="calendar-week-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', fontWeight: 'bold', textAlign: 'center', marginBottom: '10px', fontSize: '12px', color: '#888' }}>
+        <div className="calendar-week-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', textAlign: 'center', marginBottom: '10px', fontSize: '12px', color: '#888' }}>
           <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
         </div>
 
-        {/* 날짜 그리드 */}
         <div className="calendar-days-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', rowGap: '10px', textAlign: 'center' }}>
           {generateCalendarDays().map((day, idx) => {
             if (!day) return <div key={`empty-${idx}`} />;
             
-            const dateStr = day.toISOString().split('T')[0];
+            const dateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
             const isSelected = dateStr === selectedDateStr;
             const hasItems = (allTodos[dateStr] || []).length > 0;
             const isAllDone = hasItems && (allTodos[dateStr] || []).every(t => t.isCompleted);
@@ -167,22 +231,16 @@ const Calender: React.FC<CalenderProps> = ({ onClose = () => {} }) => {
                 key={dateStr}
                 onClick={() => setSelectedDateStr(dateStr)}
                 style={{
-                  padding: '10px 0',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
+                  padding: '10px 0', borderRadius: '12px', cursor: 'pointer', fontSize: '14px',
                   fontWeight: isSelected ? 'bold' : 'normal',
-                  background: isSelected ? '#FFDEE9' : 'transparent',
-                  position: 'relative',
-                  transition: '0.2s'
+                  background: isSelected ? '#FFDEE9' : 'transparent', position: 'relative'
                 }}
               >
                 {day.getDate()}
-                {/* 할 일이 등록되어 있을 때 표시되는 앵두 표시 포인트 */}
                 {hasItems && (
                   <span style={{
                     position: 'absolute', bottom: '3px', left: '50%', transform: 'translateX(-50%)',
-                    width: '5px', height: '5px', borderRadius: '50%',
+                    width: '5px', height: '5px', border_radius: '50%',
                     background: isAllDone ? '#4ec0a6' : '#ff66aa'
                   }} />
                 )}
@@ -192,11 +250,10 @@ const Calender: React.FC<CalenderProps> = ({ onClose = () => {} }) => {
         </div>
       </div>
 
-      {/* 오른쪽: 줄공책 모양 To-Do List 영역 */}
+      {/* 우측: To-Do 메모 리스트 스코프 */}
       <div className="todo-right-box" style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#fafafa', padding: '15px', borderRadius: '20px', border: '1px solid #ddd' }}>
         <h4 style={{ margin: '0 0 10px 0', fontSize: '15px' }}>📌 {selectedDateStr} 일정</h4>
         
-        {/* 줄공책 디자인의 리스트 피드 스코프 */}
         <div className="notebook-lines" style={{ flex: 1, overflowY: 'auto', marginBottom: '15px', paddingRight: '5px' }}>
           {currentDayTodos.length === 0 ? (
             <p style={{ color: '#aaa', fontSize: '13px', textAlign: 'center', marginTop: '30px' }}>지정된 할 일이 없습니다.</p>
@@ -207,7 +264,7 @@ const Calender: React.FC<CalenderProps> = ({ onClose = () => {} }) => {
                   <input
                     type="checkbox"
                     checked={todo.isCompleted}
-                    onChange={() => toggleTodoComplete(todo.id)}
+                    onChange={() => toggleTodoComplete(todo.id, todo.isCompleted)} // 파라미터 매핑 수정
                     style={{ marginRight: '10px', cursor: 'pointer' }}
                   />
                   <span style={{ flex: 1, textDecoration: todo.isCompleted ? 'line-through' : 'none', color: todo.isCompleted ? '#aaa' : '#333' }}>
@@ -221,14 +278,13 @@ const Calender: React.FC<CalenderProps> = ({ onClose = () => {} }) => {
           )}
         </div>
 
-        {/* 하단 추가 인터페이스 */}
         <div className="add-todo-trigger" onClick={() => openModal(null, "add")} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', padding: '10px', background: '#B5FFFC', borderRadius: '12px', justifyContent: 'center' }}>
           <CiCirclePlus size={20} />
           <span style={{ fontSize: '13px', fontWeight: 'bold' }}>할 일 추가</span>
         </div>
       </div>
 
-      {/* 조작용 독립 팝업 모달 */}
+      {/* 조작 제어용 백드롭 모달 영역 */}
       {isModalOpen && (
         <div className="modal-backdrop" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.2)', zIndex: 5000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <div className="modal-content-card" style={{ background: '#fff', padding: '20px', borderRadius: '20px', width: '300px', boxShadow: '0 4px 15px rgba(0,0,0,0.1)' }}>
