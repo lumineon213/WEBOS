@@ -11,6 +11,7 @@ import AdminPanel from './icon/admin/admin';
 import { useAuth } from '../hooks/useAuth';
 import { clearUserSession } from '../utils/auth';
 import { supabase } from '../utils/supabase';
+import Calender from './icon/calender/calender'; 
 
 interface DesktopIcon {
   id: string;
@@ -57,7 +58,6 @@ const MainPage: React.FC = () => {
   });
 
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
-
   const [icons, setIcons] = useState<DesktopIcon[]>(BASE_DESKTOP_ICONS);
 
   useEffect(() => {
@@ -91,11 +91,16 @@ const MainPage: React.FC = () => {
     const isChat = id === 'chat';
     const isBoard = id === 'board';
     const isAdminWin = id === 'admin';
+    const isCalendar = id === 'calendar'; 
+
     setWindows([...windows, { 
-      id, x: 120, y: 60,
-      width: isChat ? 960 : isBoard ? 1000 : isAdminWin ? 720 : 600,
-      height: isChat ? 620 : isBoard ? 640 : isAdminWin ? 520 : 450,
-      isMaximized: false, isMinimized: false 
+      id, 
+      x: 120, 
+      y: 60,
+      width: isChat ? 960 : isBoard ? 1000 : isAdminWin ? 720 : isCalendar ? 600 : 600, // 달력 기본 크기 지정
+      height: isChat ? 620 : isBoard ? 640 : isAdminWin ? 520 : isCalendar ? 550 : 450, 
+      isMaximized: false, 
+      isMinimized: false 
     }]);
   };
 
@@ -123,7 +128,7 @@ const MainPage: React.FC = () => {
     setIsStartMenuOpen(false); 
     const target = type === 'icon' ? icons.find(i => i.id === id) : windows.find(w => w.id === id);
     if (target) {
-      if (type === 'window' && target.isMaximized) return;
+      if (type === 'window' && target.isMaximized) return; 
       setDragging({ id, type });
       setOffset({ x: e.clientX - target.x, y: e.clientY - target.y });
     }
@@ -142,20 +147,19 @@ const MainPage: React.FC = () => {
     background: background.type === 'color' ? background.value : `url(${background.value}) no-repeat center center / cover`
   };
 
-  // ✅ 3. 로그아웃 처리 함수
   const handleLogout = async () => {
     await supabase.auth.signOut();
     clearUserSession();
     navigate('/');
   };
 
-return (
+  return (
     <div 
       className="os-background" 
       style={backgroundStyle} 
       onMouseMove={onMouseMove} 
-      onMouseUp={() => { setDragging(null); }} // ✅ 메뉴 닫기 로직을 여기서 제거 (중요)
-      onClick={() => setIsStartMenuOpen(false)} // ✅ 바탕화면 클릭 시에만 메뉴가 닫히도록 변경
+      onMouseUp={() => { setDragging(null); }} 
+      onClick={() => setIsStartMenuOpen(false)} 
     >
       {/* 배경 데코레이션 */}
       {background.type === 'color' && (
@@ -173,7 +177,7 @@ return (
             key={icon.id} className="icon-wrapper"
             style={{ left: icon.x, top: icon.y }}
             onMouseDown={(e) => onMouseDown(e, icon.id, 'icon')}
-            onDoubleClick={(e) => { e.stopPropagation(); handleOpenApp(icon.id); }} // ✅ 이벤트 전파 방지
+            onDoubleClick={(e) => { e.stopPropagation(); handleOpenApp(icon.id); }}
           >
             <div className="icon-bubble">{icon.icon}</div>
             <div className="icon-label">{icon.name}</div>
@@ -183,11 +187,7 @@ return (
 
       {/* 스타트 메뉴 UI */}
       {isStartMenuOpen && (
-        <div 
-          className="start-menu-container" 
-          onClick={(e) => e.stopPropagation()} // ✅ 메뉴 내부 클릭 시 메뉴가 닫히지 않게 차단
-          onMouseDown={(e) => e.stopPropagation()}
-        >
+        <div className="start-menu-container" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
           <div className="start-menu-header">
             <div className="user-avatar">🍡</div>
             <div className="user-info">
@@ -197,28 +197,13 @@ return (
               </p>
               <p className="user-status">{role} · 온라인</p>
             </div>
-            <button 
-              className="power-btn" 
-              onClick={(e) => { 
-                e.stopPropagation(); 
-                handleLogout(); // ✅ 이제 정상 작동합니다
-              }}
-            >
-              로그아웃
-            </button>
+            <button className="power-btn" onClick={(e) => { e.stopPropagation(); handleLogout(); }}>로그아웃</button>
           </div>
           <div className="start-menu-body">
             <p className="menu-section-title">자주 사용하는 앱</p>
             <div className="pinned-apps">
               {icons.map(icon => (
-                <div 
-                  key={icon.id} 
-                  className="pinned-app-item" 
-                  onClick={(e) => {
-                    e.stopPropagation(); 
-                    handleOpenApp(icon.id); // ✅ 게시판 등 앱 실행
-                  }}
-                >
+                <div key={icon.id} className="pinned-app-item" onClick={(e) => { e.stopPropagation(); handleOpenApp(icon.id); }}>
                   <span className="app-icon">{icon.icon}</span>
                   <span className="app-name">{icon.name}</span>
                 </div>
@@ -238,14 +223,19 @@ return (
           <div 
             key={win.id} className={`window-frame ${win.isMaximized ? 'maximized' : ''}`}
             style={{ left: win.x, top: win.y, width: win.width, height: win.height }}
-            onClick={(e) => e.stopPropagation()} // ✅ 창 클릭 시 메뉴 닫힘 방지
+            onClick={(e) => e.stopPropagation()} 
             onMouseDown={(e) => e.stopPropagation()}
           >
             <div className="window-header" onMouseDown={(e) => onMouseDown(e, win.id, 'window')}>
-              <span className="window-title">{icons.find(i => i.id === win.id)?.name}</span>
+              <span className="window-title">
+                {win.id === 'calendar' ? '📅 달력 시스템' : icons.find(i => i.id === win.id)?.name}
+              </span>
               <div className="window-controls-win">
+                {/* 최소화 버튼(—) */}
                 <button className="win-btn" onClick={(e) => { e.stopPropagation(); setWindows(windows.map(w => w.id === win.id ? {...w, isMinimized: true} : w)); }}>—</button>
+                {/* 최대화/복원 버튼(▢) -> 달력도 정상 출력 및 작동 */}
                 <button className="win-btn" onClick={(e) => { e.stopPropagation(); toggleMaximize(win.id); }}>{win.isMaximized ? '❐' : '▢'}</button>
+                {/* 닫기 버튼(✕) */}
                 <button className="win-btn close" onClick={(e) => { e.stopPropagation(); setWindows(windows.filter(w => w.id !== win.id)); }}>✕</button>
               </div>
             </div>
@@ -255,6 +245,7 @@ return (
               {win.id === 'settings' && <Setting currentBackground={background} onBackgroundChange={setBackground} />}
               {win.id === 'memo' && <Memo />}
               {win.id === 'admin' && isAdmin && <AdminPanel />}
+              {win.id === 'calendar' && <Calender />} 
             </div>
           </div>
         )
@@ -263,20 +254,17 @@ return (
       {/* 우측 위젯 패널 */}
       <div className="widget-panel" onClick={(e) => e.stopPropagation()}>
         <div className="widget weather-widget-box"><Weather /></div>
-        <div className="widget memo">✏️ 밥 먹기</div>
+        {/* 달력 위젯 클릭 시 일반 앱 실행 구조로 연동 */}
+        <div className="widget calendar" style={{ cursor: 'pointer' }} onClick={() => handleOpenApp('calendar')}>
+          📅 달력 보기
+        </div>
         <div className="widget draw">🎨 그림 그리기</div>
       </div>
 
       {/* 하단 작업표시줄 */}
       <div className="taskbar-container">
         <div className="floating-taskbar" onClick={(e) => e.stopPropagation()}>
-          <button 
-            className={`start-btn ${isStartMenuOpen ? 'active' : ''}`} 
-            onClick={(e) => { 
-              e.stopPropagation(); 
-              setIsStartMenuOpen(!isStartMenuOpen); 
-            }}
-          >
+          <button className={`start-btn ${isStartMenuOpen ? 'active' : ''}`} onClick={(e) => { e.stopPropagation(); setIsStartMenuOpen(!isStartMenuOpen); }}>
             Mochi
           </button>
           <div className="divider" />
@@ -289,7 +277,7 @@ return (
                 handleOpenApp(win.id);
               }}
             >
-              {icons.find(i => i.id === win.id)?.icon}
+              {win.id === 'calendar' ? '📅' : icons.find(i => i.id === win.id)?.icon}
             </div>
           ))}
           <div className="taskbar-time">
