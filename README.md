@@ -3,13 +3,13 @@ frontend : npm start
 backend : ./mvnw spring-boot:run
 # 💻 Mochi WebOS Full-Stack Platform
 
-> **브라우저 환경에서 실행되는 가상 운영체제(OS) 아키텍처 기반의 개인화 웹 플랫폼**
+> **브라우저 환경에서 실행되는 가상 운영체제(OS) 아키텍처 기반의 개인화 웹 서비스**
 > 
-> 데스크톱 UI/UX를 웹 기술로 재해석하여 멀티 윈도우 창 매니징 시스템, 실시간 데이터 동기화 기반 애플리케이션(소셜 피드, 캘린더)을 통합 제공하는 프로젝트입니다.
+> 데스크톱 UI/UX를 웹 기술로 재해석하여 멀티 윈도우 창 매니징 시스템, 실시간 데이터 동기화 기반 애플리케이션(소셜 피드, 캘린더)을 통합 제공하는 플랫폼입니다.
 
 ---
 
-## 🛠️ Tech Stack & Deliverables
+## 🛠️ Tech Stack & Key Deliverables
 
 📌 Frontend & UI/UX
 <p>
@@ -29,43 +29,29 @@ backend : ./mvnw spring-boot:run
   <img src="https://img.shields.io/badge/Spring_Boot-6DB33F?style=flat-square&logo=spring-boot&logoColor=white" alt="Spring Boot">
   <img src="https://img.shields.io/badge/Java-007396?style=flat-square&logo=openjdk&logoColor=white" alt="Java">
   <img src="https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=node.js&logoColor=white" alt="Node.js">
+  <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white" alt="Supabase">
   <img src="https://img.shields.io/badge/JSON_Web_Tokens-000000?style=flat-square&logo=json-web-tokens&logoColor=white" alt="JWT">
 </p>
 
 - 가상 OS 아키텍처와 연동되는 가용성 높은 `RESTful API` 설계 및 회원 기반 권한 분리/인증 보안 체계 강화
 - 반복적인 `보일러플레이트 코드`를 최소화하여 백엔드 비즈니스 로직의 생산성과 가독성을 극대화 (Lombok 도입)
 - 세션 상태에 따른 정밀한 사용자 인증 처리 및 시작 메뉴 내 `사용자 고유 닉네임` 동적 바인딩 환경 구축
+- 날짜별 일정 데이터 및 커뮤니티 데이터를 영속적으로 관리하고, 데이터 무결성을 위한 외래키(FK) 연결 및 `RLS 보안 정책` 적용
 
-📌 Data, Search & External API
+📌 External API & Data Parsing
 <p>
-  <img src="https://img.shields.io/badge/Apache_Solr-F47C36?style=flat-square&logo=apache-solr&logoColor=white" alt="Apache Solr">
-  <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=flat-square&logo=supabase&logoColor=white" alt="Supabase">
-  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
-  <img src="https://img.shields.io/badge/MySQL-4479A1?style=flat-square&logo=mysql&logoColor=white" alt="MySQL">
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JavaScript">
 </p>
 
-- 부산 관광 정보 플랫폼 프로젝트 진행 시 공공 데이터를 효율적으로 인덱싱하여 `다중 조건 고속 검색 엔진 시스템` 구축
-- 날짜별 일정 데이터 및 커뮤니티 데이터를 영속적으로 관리하고, 데이터 무결성을 위한 외래키(FK) 릴레이션 및 `RLS 보안 정책` 적용
-- 주식 모의 투자 게임 및 외부 금융 API 데이터 파싱 기법을 도입하여 `실시간 자산 포트폴리오 관리 피드` 구현
+- 주식 모의 투자 게임 프로토타입 및 외부 금융 API 데이터 파싱 기법을 도입하여 `실시간 자산 포트폴리오 관리 피드` 구현
 
-📌 DevOps & Team Leadership
-<p>
-  <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker">
-  <img src="https://img.shields.io/badge/Amazon_EC2-FF9900?style=flat-square&logo=amazon-ec2&logoColor=white" alt="AWS EC2">
-  <img src="https://img.shields.io/badge/Git-F05032?style=flat-square&logo=git&logoColor=white" alt="Git">
-  <img src="https://img.shields.io/badge/GitHub-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub">
-</p>
-
-- 인프라 환경에 구애받지 않는 가상화 컨테이너 서버를 빌드하고 `AWS 클라우드 배포`를 통해 서비스 가용성 확보
-- 팀 프로젝트 진행 시 활성화되지 않은 팀원들을 독려하고 복잡한 소스코드 충돌을 `주도적으로 조율`하여 프로젝트 완성도를 견인
-- `K-Sea AI Challenge 2025` 본선에 진출하여 해양/선박 환경 최적화 기능을 개발하며 실무 웹 풀스택 역량을 검증받음
 ---
 
 ## 🏁 Trouble Shooting & Core Optimization
 
 ### 1. CSS 3D 가속 및 GPU 렌더링 시 시작 메뉴 모서리 깨짐 해결
 - **문제 상황**: 시작 메뉴 팝업 등장 애니메이션(`@keyframes slideUp`) 실행 시, 브라우저가 요소를 다시 그리며 부모의 `border-radius`와 `overflow: hidden`을 무시하고 자식 요소가 각지게 가려지는 그래픽 깨짐 현상 직면.
-- **해결 방안**: 하드웨어 가속 중에도 모서리 픽셀이 자식 요소를 완전히 가두도록 하단 하드웨어 가속 치트키 속성을 덧붙여 브라우저 렌더링 버그를 근본적으로 제어.
+- **해결 방안**: 하드웨어 가속 중에도 모서리 픽셀이 자식 요소를 완전히 가두도록 하단 하드웨어 가속 속성을 덧붙여 브라우저 렌더링 버그를 근본적으로 제어.
   ```css
   .start-menu-container {
     will-change: transform, opacity;
