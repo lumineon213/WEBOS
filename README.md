@@ -9,17 +9,26 @@ backend : ./mvnw spring-boot:run
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Tech Stack & Architecture
 
-### Frontend
-- **Framework & Language:** React (TSX), TypeScript
-- **Styling:** CSS3 (미니멀 아날로그 감성 테마)
+### 📌 Frontend & UI/UX
+- **React (TSX) & TypeScript:** 가형 운영체제(WebOS) 환경에 최적화된 컴포넌트 설계 및 정적 타입 안정성 확보
+- **CSS3 Responsive Design:** 미니멀 아날로그 감성 테마 구현 및 모니터 해상도에 따른 유연한 창 크기 가로 확장 대응
 
-### Backend & Database
-- **Framework & Language:** Spring Boot, Java, Python
-- **BaaS (Backend as a Service):** Supabase (인증 및 실시간 데이터 인프라)
-- **Search Engine:** Apache Solr (대용량 인덱싱 및 다중 조건 검색 엔진 연동)
+### 📌 Backend & Security
+- **Spring Boot & Security:** RESTful API 아키텍처 설계 및 유저 권한 분리를 통한 서버 보안 강화
+- **Java & Lombok:** 반복적인 보일러플레이트 코드를 최소화하여 백엔드 비즈니스 로직의 생산성 및 가독성 향상
+- **Supabase Authentication:** 세션 상태에 따른 사용자 인증 처리 및 개인화된 세션 데이터 매핑
 
+### 📌 Data, Search & External API
+- **Apache Solr (Big Data):** 대용량 공공 관광 데이터 인덱싱 및 다중 조건 고속 검색 엔진 시스템 구축
+- **Supabase DB (PostgreSQL):** 실시간 데이터 동기화 기반의 테이블 설계 및 가로/세로 매핑 릴레이션 최적화
+- **Public & Financial APIs:** 외부 공공 기관 및 금융 API 데이터 파싱을 활용한 실시간 정보 피드 구현
+
+### 📌 DevOps & Environments
+- **Docker:** 인프라 환경에 구애받지 않는 독립적인 서버 컨테이너 가상화 환경 구축
+- **AWS EC2:** 클라우드 인프라를 활용한 웹 서비스 배포 및 가용성 확보
+- **Git / GitHub:** 팀 리더 중심의 브랜치 전략 운용 및 복잡한 코드 충돌(Conflict) 조율을 통한 협업 생산성 극대화
 ---
 
 ## 🚀 Key Features
