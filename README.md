@@ -38,13 +38,6 @@ backend : ./mvnw spring-boot:run
 - 세션 상태에 따른 정밀한 사용자 인증 처리 및 시작 메뉴 내 `사용자 고유 닉네임` 동적 바인딩 환경 구축
 - 날짜별 일정 데이터 및 커뮤니티 데이터를 영속적으로 관리하고, 데이터 무결성을 위한 외래키(FK) 연결 및 `RLS 보안 정책` 적용
 
-📌 External API & Data Parsing
-<p>
-  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black" alt="JavaScript">
-</p>
-
-- 주식 모의 투자 게임 프로토타입 및 외부 금융 API 데이터 파싱 기법을 도입하여 `실시간 자산 포트폴리오 관리 피드` 구현
-
 ---
 
 ## 🏁 Trouble Shooting & Core Optimization
