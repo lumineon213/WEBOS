@@ -30,7 +30,11 @@ backend : ./mvnw spring-boot:run
 - **Docker & AWS EC2**: 인프라 환경에 구애받지 않는 가상화 컨테이너 서버를 빌드하고 AWS 클라우드 배포를 통해 서비스 가용성 확보
 - **Git / GitHub (Conflict Resolution)**: 팀 프로젝트 진행 시 활성화되지 않은 팀원들을 독려하고 복잡한 소스코드 충돌을 주도적으로 조율하여 프로젝트 완성도를 견인
 - **Project Achievements**: K-Sea AI Challenge 2025 본선에 진출하여 해양/선박 환경 최적화 기능을 개발하며 실무 웹 풀스택 역량을 검증받음
-
+<p>
+  <img src="https://img.shields.io/badge/React-20232A?style=flat-square&logo=react&logoColor=61DAFB" alt="React">
+  <img src="https://img.shields.io/badge/TypeScript-007ACC?style=flat-square&logo=typescript&logoColor=white" alt="TS">
+  <img src="https://img.shields.io/badge/CSS3-1572B6?style=flat-square&logo=css3&logoColor=white" alt="CSS">
+</p>
 ---
 
 ## 🏁 Trouble Shooting & Core Optimization
